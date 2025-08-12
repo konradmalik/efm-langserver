@@ -1,4 +1,5 @@
-NOTE: this is a fork that I aim to maintain and develop. It will be a cleaned up and simplified version of the original.
+NOTE: this is a fork [efm-langserver](https://github.com/mattn/efm-langserver) that I aim to maintain and develop separately.
+It will be a cleaned up and simplified version of the original.
 
 # efm-langserver
 
