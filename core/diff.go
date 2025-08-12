@@ -1,4 +1,4 @@
-package diff
+package core
 
 import (
 	"github.com/aymanbagabas/go-udiff"

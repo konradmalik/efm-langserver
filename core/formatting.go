@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/konradmalik/efm-langserver/diff"
 	"github.com/konradmalik/efm-langserver/types"
 )
 
@@ -172,7 +171,7 @@ Configs:
 	if h.loglevel >= 3 {
 		h.logger.Println("format succeeded")
 	}
-	return diff.ComputeEdits(uri, originalText, text)
+	return ComputeEdits(uri, originalText, text)
 }
 
 func formatConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language) []types.Language {
