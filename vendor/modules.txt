@@ -1,3 +1,8 @@
+# github.com/aymanbagabas/go-udiff v0.3.1
+## explicit; go 1.23
+github.com/aymanbagabas/go-udiff
+github.com/aymanbagabas/go-udiff/lcs
+github.com/aymanbagabas/go-udiff/myers
 # github.com/mattn/go-unicodeclass v0.0.2
 ## explicit
 github.com/mattn/go-unicodeclass

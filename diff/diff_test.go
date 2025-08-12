@@ -54,8 +54,21 @@ func TestComputeEdits(t *testing.T) {
 			expected: []types.TextEdit{
 				{
 					Range: types.Range{
+						Start: types.Position{Line: 0, Character: 0},
+						End:   types.Position{Line: 1, Character: 0},
+					},
+				},
+				{
+					Range: types.Range{
 						Start: types.Position{Line: 1, Character: 0},
 						End:   types.Position{Line: 1, Character: 0},
+					},
+					NewText: "line1\n",
+				},
+				{
+					Range: types.Range{
+						Start: types.Position{Line: 2, Character: 0},
+						End:   types.Position{Line: 2, Character: 0},
 					},
 					NewText: "line2\n",
 				},
@@ -68,15 +81,28 @@ func TestComputeEdits(t *testing.T) {
 			expected: []types.TextEdit{
 				{
 					Range: types.Range{
-						Start: types.Position{Line: 1, Character: 0},
+						Start: types.Position{Line: 0, Character: 0},
 						End:   types.Position{Line: 1, Character: 0},
 					},
-					NewText: "line2\n",
 				},
 				{
 					Range: types.Range{
 						Start: types.Position{Line: 1, Character: 0},
 						End:   types.Position{Line: 1, Character: 0},
+					},
+					NewText: "line1\n",
+				},
+				{
+					Range: types.Range{
+						Start: types.Position{Line: 2, Character: 0},
+						End:   types.Position{Line: 2, Character: 0},
+					},
+					NewText: "line2\n",
+				},
+				{
+					Range: types.Range{
+						Start: types.Position{Line: 3, Character: 0},
+						End:   types.Position{Line: 3, Character: 0},
 					},
 					NewText: "line3\n",
 				},
@@ -115,9 +141,22 @@ func TestComputeEdits(t *testing.T) {
 			expected: []types.TextEdit{
 				{
 					Range: types.Range{
+						Start: types.Position{Line: 0, Character: 0},
+						End:   types.Position{Line: 1, Character: 0},
+					},
+				},
+				{
+					Range: types.Range{
 						Start: types.Position{Line: 1, Character: 0},
 						End:   types.Position{Line: 2, Character: 0},
 					},
+				},
+				{
+					Range: types.Range{
+						Start: types.Position{Line: 2, Character: 0},
+						End:   types.Position{Line: 2, Character: 0},
+					},
+					NewText: "line1\n",
 				},
 			},
 		},
@@ -126,6 +165,12 @@ func TestComputeEdits(t *testing.T) {
 			before: "line1\nline2\nline3\nline4\n",
 			after:  "line1\nline4\n",
 			expected: []types.TextEdit{
+				{
+					Range: types.Range{
+						Start: types.Position{Line: 0, Character: 0},
+						End:   types.Position{Line: 1, Character: 0},
+					},
+				},
 				{
 					Range: types.Range{
 						Start: types.Position{Line: 1, Character: 0},
@@ -137,6 +182,13 @@ func TestComputeEdits(t *testing.T) {
 						Start: types.Position{Line: 2, Character: 0},
 						End:   types.Position{Line: 3, Character: 0},
 					},
+				},
+				{
+					Range: types.Range{
+						Start: types.Position{Line: 3, Character: 0},
+						End:   types.Position{Line: 3, Character: 0},
+					},
+					NewText: "line1\n",
 				},
 			},
 		},
@@ -180,8 +232,8 @@ func TestComputeEdits(t *testing.T) {
 				},
 				{
 					Range: types.Range{
-						Start: types.Position{Line: 2, Character: 0},
-						End:   types.Position{Line: 2, Character: 0},
+						Start: types.Position{Line: 3, Character: 0},
+						End:   types.Position{Line: 3, Character: 0},
 					},
 					NewText: "line4\n",
 				},
@@ -203,7 +255,14 @@ func TestComputeEdits(t *testing.T) {
 						Start: types.Position{Line: 0, Character: 0},
 						End:   types.Position{Line: 0, Character: 0},
 					},
-					NewText: "line1\nline2\n",
+					NewText: "line1\n",
+				},
+				{
+					Range: types.Range{
+						Start: types.Position{Line: 1, Character: 0},
+						End:   types.Position{Line: 1, Character: 0},
+					},
+					NewText: "line2\n",
 				},
 			},
 		},
@@ -215,6 +274,12 @@ func TestComputeEdits(t *testing.T) {
 				{
 					Range: types.Range{
 						Start: types.Position{Line: 0, Character: 0},
+						End:   types.Position{Line: 1, Character: 0},
+					},
+				},
+				{
+					Range: types.Range{
+						Start: types.Position{Line: 1, Character: 0},
 						End:   types.Position{Line: 2, Character: 0},
 					},
 				},
@@ -285,10 +350,13 @@ func TestComputeEdits(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			uri := types.DocumentURI("file:///test.txt")
-			actual := ComputeEdits(uri, tt.before, tt.after)
+			actual, err := ComputeEdits(uri, tt.before, tt.after)
+			if err != nil {
+				panic(err)
+			}
 
 			if len(actual) != len(tt.expected) {
-				t.Fatalf("Expected %d edits, got %d", len(tt.expected), len(actual))
+				t.Fatalf("[%s] Expected %d edits, got %d", tt.name, len(tt.expected), len(actual))
 			}
 
 			for i, edit := range actual {
@@ -297,12 +365,12 @@ func TestComputeEdits(t *testing.T) {
 					edit.Range.Start.Character != expected.Range.Start.Character ||
 					edit.Range.End.Line != expected.Range.End.Line ||
 					edit.Range.End.Character != expected.Range.End.Character {
-					t.Errorf("Edit %d: expected range %+v, got %+v",
-						i, expected.Range, edit.Range)
+					t.Errorf("[%s] Edit %d: expected range %+v, got %+v",
+						tt.name, i, expected.Range, edit.Range)
 				}
 				if edit.NewText != expected.NewText {
-					t.Errorf("Edit %d: expected NewText %q, got %q",
-						i, expected.NewText, edit.NewText)
+					t.Errorf("[%s] Edit %d: expected NewText %q, got %q",
+						tt.name, i, expected.NewText, edit.NewText)
 				}
 			}
 		})
@@ -327,7 +395,10 @@ func TestComputeEdits_LargeInput(t *testing.T) {
 	}
 
 	uri := types.DocumentURI("file:///large.txt")
-	edits := ComputeEdits(uri, before, after)
+	edits, err := ComputeEdits(uri, before, after)
+	if err != nil {
+		panic(err)
+	}
 
 	// Should have edits for the changed lines
 	if len(edits) == 0 {
@@ -363,7 +434,10 @@ func main() {
 `
 
 	uri := types.DocumentURI("file:///main.go")
-	edits := ComputeEdits(uri, before, after)
+	edits, err := ComputeEdits(uri, before, after)
+	if err != nil {
+		panic(err)
+	}
 
 	// Should have some edits
 	if len(edits) == 0 {

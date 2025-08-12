@@ -172,7 +172,7 @@ Configs:
 	if h.loglevel >= 3 {
 		h.logger.Println("format succeeded")
 	}
-	return diff.ComputeEdits(uri, originalText, text), nil
+	return diff.ComputeEdits(uri, originalText, text)
 }
 
 func formatConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language) []types.Language {
