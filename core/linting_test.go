@@ -135,7 +135,7 @@ func TestLintFileMatchedForce(t *testing.T) {
 	}
 }
 
-// column 0 remains unchanged, regardles of the configured offset
+// column 0 remains unchanged, regardless of the configured offset
 // column 0 indicates a whole line (although for 0-based column linters we can not distinguish between word starting at 0 and the whole line)
 func TestLintOffsetColumnsZero(t *testing.T) {
 	base, _ := os.Getwd()

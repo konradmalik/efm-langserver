@@ -70,7 +70,7 @@ func TestApplyRangePlaceholders(t *testing.T) {
 func TestBuildCommand_RemovesUnfilled(t *testing.T) {
 	cfg := types.Language{FormatCommand: "echo ${flag:opt}"}
 	opts := types.FormattingOptions{"opt": "value"}
-	cmd, err := buildCommand(cfg, "file.txt", opts, nil, "text", "/root")
+	cmd, err := buildFormatCommand(cfg, "file.txt", opts, nil, "text", "/root")
 	assert.NoError(t, err)
 	assert.NotContains(t, cmd, "${")
 }

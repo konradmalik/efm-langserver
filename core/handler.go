@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -296,19 +295,11 @@ func isFilename(s string) bool {
 	}
 }
 
-func itoaPtrIfNotZero(n int) *string {
-	if n == 0 {
-		return nil
-	}
-	s := strconv.Itoa(n)
-	return &s
-}
-
 func replaceCommandInputFilename(command, fname, rootPath string) string {
 	ext := filepath.Ext(fname)
 	ext = strings.TrimPrefix(ext, ".")
 
-	command = strings.ReplaceAll(command, "${INPUT}", escapeBrackets(fname))
+	command = strings.ReplaceAll(command, inputPlaceholder, escapeBrackets(fname))
 	command = strings.ReplaceAll(command, "${FILEEXT}", ext)
 	command = strings.ReplaceAll(command, "${FILENAME}", escapeBrackets(filepath.FromSlash(fname)))
 	command = strings.ReplaceAll(command, "${ROOT}", escapeBrackets(rootPath))
@@ -323,7 +314,7 @@ func escapeBrackets(path string) string {
 	return path
 }
 
-func succeeded(err error) bool {
+func execCancelled(err error) bool {
 	exitErr, ok := err.(*exec.ExitError)
 	// When the context is canceled, the process is killed,
 	// and the exit code is -1

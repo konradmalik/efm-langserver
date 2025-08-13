@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -32,16 +31,6 @@ func (h *LangHandler) Formatting(uri types.DocumentURI, rng *types.Range, opt ty
 	h.formatMu.Unlock()
 	return h.rangeFormatting(uri, rng, opt)
 }
-
-const (
-	flagPlaceholder  = "$1"
-	windowsShell     = "cmd"
-	windowsShellArg  = "/c"
-	unixShell        = "sh"
-	unixShellArg     = "-c"
-	inputPlaceholder = "${INPUT}"
-	newlineChar      = "\r"
-)
 
 var (
 	unfilledPlaceholders = regexp.MustCompile(`\${[^}]*}`)
@@ -70,7 +59,7 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 	formatted := false
 
 	for _, config := range configs {
-		cmdStr, err := buildCommand(config, fname, options, rng, formattedText, h.RootPath)
+		cmdStr, err := buildFormatCommand(config, fname, options, rng, formattedText, h.RootPath)
 		if err != nil {
 			h.logger.Println("command build error:", err)
 			continue
@@ -105,21 +94,7 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 	return ComputeEdits(uri, originalText, formattedText)
 }
 
-// --- Helper functions ---
-
-func normalizeFilename(uri types.DocumentURI) (string, error) {
-	fname, err := fromURI(uri)
-	if err != nil {
-		return "", fmt.Errorf("invalid uri: %v: %v", err, uri)
-	}
-	fname = filepath.ToSlash(fname)
-	if runtime.GOOS == "windows" {
-		fname = strings.ToLower(fname)
-	}
-	return fname, nil
-}
-
-func buildCommand(config types.Language, fname string, options types.FormattingOptions, rng *types.Range, text, rootPath string) (string, error) {
+func buildFormatCommand(config types.Language, fname string, options types.FormattingOptions, rng *types.Range, text, rootPath string) (string, error) {
 	if config.FormatCommand == "" {
 		return "", errors.New("empty format command")
 	}

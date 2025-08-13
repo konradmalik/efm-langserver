@@ -15,6 +15,7 @@ import (
 	"github.com/reviewdog/errorformat"
 )
 
+var defaultLintFormats = []string{"%f:%l:%m", "%f:%l:%c:%m"}
 var running = make(map[types.DocumentURI]context.CancelFunc)
 
 type notifier interface {
@@ -93,142 +94,56 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 	uriToDiagnostics := map[types.DocumentURI][]types.Diagnostic{
 		uri: {},
 	}
-	for i, config := range configs {
+
+	for _, config := range configs {
 		if config.LintCommand == "" {
 			continue
 		}
 
-		command := config.LintCommand
-		if !config.LintStdin && !strings.Contains(command, "${INPUT}") {
-			command = command + " ${INPUT}"
-		}
 		rootPath := h.findRootPath(fname, config)
-		command = replaceCommandInputFilename(command, fname, rootPath)
+		command := buildLintCommand(ctx, rootPath, f, fname, &config)
 
-		formats := config.LintFormats
-		if len(formats) == 0 {
-			formats = []string{"%f:%l:%m", "%f:%l:%c:%m"}
+		lintOutput, err := runLintCommand(command, &config)
+		if h.loglevel >= 3 {
+			h.logger.Println(config.LintCommand+":", string(lintOutput))
 		}
-
-		efms, err := errorformat.NewErrorformat(formats)
 		if err != nil {
-			return nil, fmt.Errorf("invalid error-format: %v", config.LintFormats)
-		}
-
-		var cmd *exec.Cmd
-		if runtime.GOOS == "windows" {
-			cmd = exec.CommandContext(ctx, "cmd", "/c", command)
-		} else {
-			cmd = exec.CommandContext(ctx, "sh", "-c", command)
-		}
-		cmd.Dir = rootPath
-		cmd.Env = append(os.Environ(), config.Env...)
-		if config.LintStdin {
-			cmd.Stdin = strings.NewReader(f.Text)
-		}
-		b, err := cmd.CombinedOutput()
-		if err != nil {
-			if succeeded(err) {
-				return nil, nil
-			}
-		}
-		// Most of lint tools exit with non-zero value. But some commands
-		// return with zero value. We can not handle the output is real result
-		// or output of usage. So efm-langserver ignore that command exiting
-		// with zero-value. So if you want to handle the command which exit
-		// with zero value, please specify lint-ignore-exit-code.
-		if err == nil && !config.LintIgnoreExitCode {
-			errorMessage := "command `" + command + "` exit with zero. probably you forgot to specify `lint-ignore-exit-code: true`."
-			notifier.LogMessage(ctx, types.LogError, errorMessage)
-			h.logger.Println(errorMessage)
+			notifier.LogMessage(ctx, types.LogError, err.Error())
+			h.logger.Println(err)
 			continue
 		}
-		if h.loglevel >= 3 {
-			h.logger.Println(command+":", string(b))
-		}
-		var source *string
-		if config.LintSource != "" {
-			source = &configs[i].LintSource
+
+		efms, err := buildErrorformats(config.LintFormats)
+		if err != nil {
+			return nil, err
 		}
 
-		var prefix string
-		if config.Prefix != "" {
-			prefix = fmt.Sprintf("[%s] ", config.Prefix)
-		}
-
-		scanner := efms.NewScanner(bytes.NewReader(b))
-		for scanner.Scan() {
-			entry := scanner.Entry()
+		efmsScanner := efms.NewScanner(bytes.NewReader(lintOutput))
+		for efmsScanner.Scan() {
+			entry := efmsScanner.Entry()
 			if !entry.Valid {
 				continue
 			}
-			if config.LintStdin && isFilename(entry.Filename) {
-				entry.Filename = fname
-				path, err := filepath.Abs(entry.Filename)
-				if err != nil {
-					continue
-				}
-				path = filepath.ToSlash(path)
-				if runtime.GOOS == "windows" && !strings.EqualFold(path, fname) {
-					continue
-				} else if path != fname {
-					continue
-				}
-			} else {
-				entry.Filename = filepath.ToSlash(entry.Filename)
-			}
-			word := ""
 
-			// entry.Col is expected to be one based, if the linter returns zero based we
-			// have the ability to add an offset here.
-			// We only add the offset if the linter reports entry.Col > 0 because 0 means the whole line
-			if config.LintOffsetColumns > 0 && entry.Col > 0 {
-				entry.Col = entry.Col + config.LintOffsetColumns
+			entryFilename, ok := normalizeEntryFilename(entry.Filename, &config, fname)
+			if !ok {
+				continue
+			}
+			entry.Filename = entryFilename
+
+			diagURI, ok := createDiagnosticsUri(rootPath, uri, entry)
+			if !ok {
+				continue
 			}
 
-			if entry.Lnum == 0 {
-				entry.Lnum = 1 // entry.Lnum == 0 indicates the top line, set to 1 because it is subtracted later
-			}
-
-			if entry.Col == 0 {
-				entry.Col = 1 // entry.Col == 0 indicates the whole line without column, set to 1 because it is subtracted later
-			} else {
-				word = f.wordAt(types.Position{Line: entry.Lnum - 1 - config.LintOffset, Character: entry.Col - 1})
-			}
-
-			diagURI := uri
-			if entry.Filename != "" {
-				if filepath.IsAbs(entry.Filename) {
-					diagURI = toURI(entry.Filename)
-				} else {
-					diagURI = toURI(filepath.Join(rootPath, entry.Filename))
-				}
-			}
-			if runtime.GOOS == "windows" {
-				if !strings.EqualFold(string(diagURI), string(uri)) {
-					continue
-				}
-			} else {
-				if diagURI != uri {
-					continue
-				}
-			}
-
-			uriToDiagnostics[diagURI] = append(uriToDiagnostics[diagURI], types.Diagnostic{
-				Range: types.Range{
-					Start: types.Position{Line: entry.Lnum - 1 - config.LintOffset, Character: entry.Col - 1},
-					End:   types.Position{Line: entry.Lnum - 1 - config.LintOffset, Character: entry.Col - 1 + len([]rune(word))},
-				},
-				Code:     itoaPtrIfNotZero(entry.Nr),
-				Message:  prefix + entry.Text,
-				Severity: getSeverity(entry.Type, config.LintCategoryMap, config.LintSeverity),
-				Source:   source,
-			})
+			diagnostic := parseEfmEntryToDiagnostic(entry, &config, f)
+			uriToDiagnostics[diagURI] = append(uriToDiagnostics[diagURI], diagnostic)
 		}
 	}
 
 	return uriToDiagnostics, nil
 }
+
 func getSeverity(typ rune, categoryMap map[string]string, defaultSeverity types.DiagnosticSeverity) types.DiagnosticSeverity {
 	// we allow the config to provide a mapping between LSP types E,W,I,N and whatever categories the linter has
 	if len(categoryMap) > 0 {
@@ -289,8 +204,145 @@ func lintConfigsForDocument(fname, langId string, allConfigs map[string][]types.
 	return configs
 }
 
+func buildErrorformats(configFormats []string) (*errorformat.Errorformat, error) {
+	if len(configFormats) == 0 {
+		configFormats = defaultLintFormats
+	}
+
+	efms, err := errorformat.NewErrorformat(configFormats)
+	if err != nil {
+		return nil, fmt.Errorf("invalid error-format: %v", configFormats)
+	}
+	return efms, nil
+}
+
+func buildLintCommand(ctx context.Context, rootPath string, f *fileRef, fname string, config *types.Language) *exec.Cmd {
+	command := config.LintCommand
+	if !config.LintStdin && !strings.Contains(command, inputPlaceholder) {
+		command = command + " " + inputPlaceholder
+	}
+	command = replaceCommandInputFilename(command, fname, rootPath)
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.CommandContext(ctx, windowsShell, windowsShellArg, command)
+	} else {
+		cmd = exec.CommandContext(ctx, unixShell, unixShellArg, command)
+	}
+	cmd.Dir = rootPath
+	cmd.Env = append(os.Environ(), config.Env...)
+	if config.LintStdin {
+		cmd.Stdin = strings.NewReader(f.Text)
+	}
+
+	return cmd
+}
+
+func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
+	lintOutput, lintCmdError := cmd.CombinedOutput()
+	if lintCmdError != nil && execCancelled(lintCmdError) {
+		return lintOutput, nil
+	}
+
+	// Most of lint tools exit with non-zero value. But some commands
+	// return with zero value. We can not handle the output is real result
+	// or output of usage. So efm-langserver ignore that command exiting
+	// with zero-value. So if you want to handle the command which exit
+	// with zero value, please specify lint-ignore-exit-code.
+	if !config.LintIgnoreExitCode && lintCmdError == nil {
+		return lintOutput, fmt.Errorf("command `%s` exit with zero. Probably you forgot to specify `lint-ignore-exit-code: true`", config.LintCommand)
+	}
+	return lintOutput, nil
+}
+
+func createDiagnosticsUri(rootPath string, uri types.DocumentURI, entry *errorformat.Entry) (types.DocumentURI, bool) {
+	diagURI := uri
+	if entry.Filename != "" {
+		if filepath.IsAbs(entry.Filename) {
+			diagURI = toURI(entry.Filename)
+		} else {
+			diagURI = toURI(filepath.Join(rootPath, entry.Filename))
+		}
+	}
+	if runtime.GOOS == "windows" {
+		if !strings.EqualFold(string(diagURI), string(uri)) {
+			return diagURI, false
+		}
+	} else {
+		if diagURI != uri {
+			return diagURI, false
+		}
+	}
+	return diagURI, true
+}
+
+func normalizeEntryFilename(entryFilename string, config *types.Language, fname string) (string, bool) {
+	if config.LintStdin && isFilename(entryFilename) {
+		entryFilename = fname
+		path, err := filepath.Abs(entryFilename)
+		if err != nil {
+			return entryFilename, false
+		}
+		path = filepath.ToSlash(path)
+		if runtime.GOOS == "windows" && !strings.EqualFold(path, fname) {
+			return entryFilename, false
+		} else if path != fname {
+			return entryFilename, false
+		}
+	} else {
+		entryFilename = filepath.ToSlash(entryFilename)
+	}
+	return entryFilename, true
+}
+
+func parseEfmEntryToDiagnostic(entry *errorformat.Entry, config *types.Language, f *fileRef) types.Diagnostic {
+	// entry.Col is expected to be one based, if the linter returns zero based we
+	// have the ability to add an offset here.
+	// We only add the offset if the linter reports entry.Col > 0 because 0 means the whole line
+	if config.LintOffsetColumns > 0 && entry.Col > 0 {
+		entry.Col = entry.Col + config.LintOffsetColumns
+	}
+
+	if entry.Lnum == 0 {
+		entry.Lnum = 1 // entry.Lnum == 0 indicates the top line, set to 1 because it is subtracted later
+	}
+
+	word := ""
+	if entry.Col == 0 {
+		entry.Col = 1 // entry.Col == 0 indicates the whole line without column, set to 1 because it is subtracted later
+	} else {
+		word = f.wordAt(types.Position{Line: entry.Lnum - 1 - config.LintOffset, Character: entry.Col - 1})
+	}
+
+	return types.Diagnostic{
+		Range: types.Range{
+			Start: types.Position{Line: entry.Lnum - 1 - config.LintOffset, Character: entry.Col - 1},
+			End:   types.Position{Line: entry.Lnum - 1 - config.LintOffset, Character: entry.Col - 1 + len([]rune(word))},
+		},
+		Code:     itoaPtrIfNotZero(entry.Nr),
+		Message:  getLintMessagePrefix(config) + entry.Text,
+		Severity: getSeverity(entry.Type, config.LintCategoryMap, config.LintSeverity),
+		Source:   getLintSource(config),
+	}
+}
+
 func (h *LangHandler) logUnsupportedLint(langID string) {
 	if h.loglevel >= 2 {
 		h.logger.Printf("lint for LanguageID not supported: %v", langID)
 	}
+}
+
+func getLintSource(config *types.Language) *string {
+	if config.LintSource != "" {
+		return &config.LintSource
+	}
+	return nil
+}
+
+func getLintMessagePrefix(config *types.Language) string {
+	var prefix string
+	if config.Prefix != "" {
+		prefix = fmt.Sprintf("[%s] ", config.Prefix)
+	}
+	return prefix
 }
