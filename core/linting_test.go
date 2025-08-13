@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/konradmalik/efm-langserver/types"
+	"github.com/reviewdog/errorformat"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLintNoLinter(t *testing.T) {
@@ -528,4 +530,50 @@ func TestLintOnSave(t *testing.T) {
 	if strings.TrimSpace(d[0].Message) != "No it is normal!" {
 		t.Fatalf("message should be %q but got: %q", "No it is normal!", strings.TrimSpace(d[0].Message))
 	}
+}
+
+func TestGetSeverity(t *testing.T) {
+	tests := []struct {
+		name            string
+		typ             rune
+		categoryMap     map[string]string
+		defaultSeverity types.DiagnosticSeverity
+		want            types.DiagnosticSeverity
+	}{
+		{"Error type", 'E', nil, 0, types.Error},
+		{"Warning type", 'W', nil, 0, types.Warning},
+		{"Info type", 'I', nil, 0, types.Information},
+		{"Hint type", 'N', nil, 0, types.Hint},
+		{"Default severity overrides", 'X', nil, types.Warning, types.Warning},
+		{"Category map remap", 'X', map[string]string{"X": "W"}, 0, types.Warning},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getSeverity(tt.typ, tt.categoryMap, tt.defaultSeverity)
+			if got != tt.want {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseEfmEntryToDiagnostic(t *testing.T) {
+	entry := &errorformat.Entry{
+		Filename: "file.txt",
+		Lnum:     1,
+		Col:      3,
+		Text:     "something bad",
+		Type:     'E',
+	}
+	cfg := &types.Language{
+		LintOffset:        0,
+		LintOffsetColumns: 1,
+	}
+	f := &fileRef{Text: "hello world\nworld hello", LanguageID: "txt"}
+
+	diag := parseEfmEntryToDiagnostic(entry, cfg, f)
+	assert.Equal(t, "something bad", diag.Message)
+	assert.Equal(t, types.Error, diag.Severity)
+	assert.Equal(t, 0, diag.Range.Start.Line)
+	assert.Equal(t, 3, diag.Range.Start.Character)
 }
