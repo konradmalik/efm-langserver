@@ -26,7 +26,6 @@ type Language struct {
 	LintCategoryMap    map[string]string
 	LintSource         string
 	LintSeverity       DiagnosticSeverity
-	LintWorkspace      bool
 	LintAfterOpen      bool
 	LintOnSave         bool
 	FormatCommand      string

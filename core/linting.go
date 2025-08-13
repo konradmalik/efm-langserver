@@ -79,41 +79,27 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 		return nil, fmt.Errorf("document not found: %v", uri)
 	}
 
-	fname, err := fromURI(uri)
+	fname, err := normalizeFilename(uri)
 	if err != nil {
-		return nil, fmt.Errorf("invalid uri: %v: %v", err, uri)
+		return nil, err
 	}
-	fname = filepath.ToSlash(fname)
 
 	configs := lintConfigsForDocument(fname, f.LanguageID, h.configs, eventType)
-
 	if len(configs) == 0 {
-		if h.loglevel >= 2 {
-			h.logger.Printf("lint for LanguageID not supported: %v", f.LanguageID)
-		}
-		return map[types.DocumentURI][]types.Diagnostic{}, nil
+		h.logUnsupportedLint(f.LanguageID)
+		return nil, nil
 	}
 
 	uriToDiagnostics := map[types.DocumentURI][]types.Diagnostic{
 		uri: {},
 	}
-	publishedURIs := make(map[types.DocumentURI]struct{})
 	for i, config := range configs {
-		// To publish empty diagnostics when errors are fixed
-		if config.LintWorkspace {
-			for lastPublishedURI := range h.lastPublishedURIs[f.LanguageID] {
-				if _, ok := uriToDiagnostics[lastPublishedURI]; !ok {
-					uriToDiagnostics[lastPublishedURI] = []types.Diagnostic{}
-				}
-			}
-		}
-
 		if config.LintCommand == "" {
 			continue
 		}
 
 		command := config.LintCommand
-		if !config.LintStdin && !config.LintWorkspace && !strings.Contains(command, "${INPUT}") {
+		if !config.LintStdin && !strings.Contains(command, "${INPUT}") {
 			command = command + " ${INPUT}"
 		}
 		rootPath := h.findRootPath(fname, config)
@@ -219,18 +205,15 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 				}
 			}
 			if runtime.GOOS == "windows" {
-				if !strings.EqualFold(string(diagURI), string(uri)) && !config.LintWorkspace {
+				if !strings.EqualFold(string(diagURI), string(uri)) {
 					continue
 				}
 			} else {
-				if diagURI != uri && !config.LintWorkspace {
+				if diagURI != uri {
 					continue
 				}
 			}
 
-			if config.LintWorkspace {
-				publishedURIs[diagURI] = struct{}{}
-			}
 			uriToDiagnostics[diagURI] = append(uriToDiagnostics[diagURI], types.Diagnostic{
 				Range: types.Range{
 					Start: types.Position{Line: entry.Lnum - 1 - config.LintOffset, Character: entry.Col - 1},
@@ -244,13 +227,6 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 		}
 	}
 
-	// Update state here as no possibility of cancellation
-	for _, config := range configs {
-		if config.LintWorkspace {
-			h.lastPublishedURIs[f.LanguageID] = publishedURIs
-			break
-		}
-	}
 	return uriToDiagnostics, nil
 }
 func getSeverity(typ rune, categoryMap map[string]string, defaultSeverity types.DiagnosticSeverity) types.DiagnosticSeverity {
@@ -311,4 +287,10 @@ func lintConfigsForDocument(fname, langId string, allConfigs map[string][]types.
 		}
 	}
 	return configs
+}
+
+func (h *LangHandler) logUnsupportedLint(langID string) {
+	if h.loglevel >= 2 {
+		h.logger.Printf("lint for LanguageID not supported: %v", langID)
+	}
 }

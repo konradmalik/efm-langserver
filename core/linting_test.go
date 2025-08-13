@@ -2,13 +2,11 @@ package core
 
 import (
 	"context"
-	"errors"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/konradmalik/efm-langserver/types"
 )
@@ -344,8 +342,7 @@ func TestLintRequireRootMarker(t *testing.T) {
 	}
 }
 
-// Test if lint can return diagnostics for multiple files
-func TestLintMultipleFiles(t *testing.T) {
+func TestLintSingleEntry(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
 	file2 := filepath.Join(base, "bar")
@@ -361,7 +358,6 @@ func TestLintMultipleFiles(t *testing.T) {
 					LintCommand:        `echo ` + file + `:2:1:First file! && echo ` + file2 + `:1:2:Second file!`,
 					LintFormats:        []string{"%f:%l:%c:%m"},
 					LintIgnoreExitCode: true,
-					LintWorkspace:      true,
 				},
 			},
 		},
@@ -375,50 +371,25 @@ func TestLintMultipleFiles(t *testing.T) {
 				Text:       "scriptencoding utf-8\nabnormal!\n",
 			},
 		},
-		lastPublishedURIs: make(map[string]map[types.DocumentURI]struct{}),
 	}
 
 	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(d) != 2 {
-		t.Fatalf("diagnostics should be two, but got %#v", d)
+	if len(d) != 1 {
+		t.Fatalf("diagnostics should be one, but got %#v", d)
 	}
 	if d[uri][0].Range.Start.Character != 0 {
 		t.Fatalf("first range.start.character should be %v but got: %v", 0, d[uri][0].Range.Start.Character)
 	}
 	if d[uri][0].Range.Start.Line != 1 {
 		t.Fatalf("first range.start.line should be %v but got: %v", 1, d[uri][0].Range.Start.Line)
-	}
-	if d[uri2][0].Range.Start.Character != 1 {
-		t.Fatalf("second range.start.character should be %v but got: %v", 1, d[uri2][0].Range.Start.Character)
-	}
-	if d[uri2][0].Range.Start.Line != 0 {
-		t.Fatalf("second range.start.line should be %v but got: %v", 0, d[uri2][0].Range.Start.Line)
-	}
-
-	h.configs["vim"][0].LintCommand = `echo ` + file + `:2:1:First file only!`
-	d, err = h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 2 {
-		t.Fatalf("diagnostics should be two, but got %#v", d)
-	}
-	if d[uri][0].Range.Start.Character != 0 {
-		t.Fatalf("first range.start.character should be %v but got: %v", 0, d[uri][0].Range.Start.Character)
-	}
-	if d[uri][0].Range.Start.Line != 1 {
-		t.Fatalf("first range.start.line should be %v but got: %v", 1, d[uri][0].Range.Start.Line)
-	}
-	if len(d[uri2]) != 0 {
-		t.Fatalf("second diagnostics should be empty but got: %v", d[uri2])
 	}
 }
 
 // Test if lint can return diagnostics for multiple files even when cancelled
-func TestLintMultipleFilesWithCancel(t *testing.T) {
+func TestLintMultipleEntries(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
 	file2 := filepath.Join(base, "bar")
@@ -434,7 +405,6 @@ func TestLintMultipleFilesWithCancel(t *testing.T) {
 					LintCommand:        `echo ` + file + `:2:1:First file! && echo ` + file2 + `:1:2:Second file! && echo ` + file2 + `:Empty l and c!`,
 					LintFormats:        []string{"%f:%l:%c:%m", "%f:%m"},
 					LintIgnoreExitCode: true,
-					LintWorkspace:      true,
 				},
 			},
 		},
@@ -448,69 +418,20 @@ func TestLintMultipleFilesWithCancel(t *testing.T) {
 				Text:       "scriptencoding utf-8\nabnormal!\n",
 			},
 		},
-		lastPublishedURIs: make(map[string]map[types.DocumentURI]struct{}),
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri2, types.EventTypeChange)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(d) != 2 {
-		t.Fatalf("diagnostics should be two, but got %#v", d)
-	}
-	if d[uri][0].Range.Start.Character != 0 {
-		t.Fatalf("first range.start.character should be %v but got: %v", 0, d[uri][0].Range.Start.Character)
-	}
-	if d[uri][0].Range.Start.Line != 1 {
-		t.Fatalf("first range.start.line should be %v but got: %v", 1, d[uri][0].Range.Start.Line)
+	if len(d) != 1 {
+		t.Fatalf("diagnostics should be one, but got %#v", d)
 	}
 	if d[uri2][0].Range.Start.Character != 1 {
-		t.Fatalf("second range.start.character should be %v but got: %v", 1, d[uri2][0].Range.Start.Character)
+		t.Fatalf("first range.start.character should be %v but got: %v", 1, d[uri2][0].Range.Start.Character)
 	}
 	if d[uri2][0].Range.Start.Line != 0 {
-		t.Fatalf("second range.start.line should be %v but got: %v", 0, d[uri2][0].Range.Start.Line)
-	}
-	if d[uri2][1].Range.Start.Character != 0 {
-		t.Fatalf("second range.start.character should be %v but got: %v", 0, d[uri2][1].Range.Start.Character)
-	}
-	if d[uri2][1].Range.Start.Line != 0 {
-		t.Fatalf("second range.start.line should be %v but got: %v", 0, d[uri2][1].Range.Start.Line)
-	}
-
-	startedFlagPath := "already-started"
-	defer func() {
-		_ = os.Remove(startedFlagPath)
-	}()
-	// Emulate heavy job
-	h.configs["vim"][0].LintCommand = `touch ` + startedFlagPath + ` && sleep 1000000 && echo ` + file + `:2:1:First file only!`
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		_, _ = h.lintDocument(ctx, nil, uri, types.EventTypeChange)
-	}()
-	for {
-		if _, err := os.Stat(startedFlagPath); errors.Is(err, os.ErrNotExist) {
-			time.Sleep(50 * time.Microsecond)
-			continue
-		}
-		break
-	}
-	cancel()
-	h.configs["vim"][0].LintCommand = `echo ` + file + `:2:1:First file only!`
-	d, err = h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 2 {
-		t.Fatalf("diagnostics should be two, but got %#v", d)
-	}
-	if d[uri][0].Range.Start.Character != 0 {
-		t.Fatalf("first range.start.character should be %v but got: %v", 0, d[uri][0].Range.Start.Character)
-	}
-	if d[uri][0].Range.Start.Line != 1 {
-		t.Fatalf("first range.start.line should be %v but got: %v", 1, d[uri][0].Range.Start.Line)
-	}
-	if len(d[uri2]) != 0 {
-		t.Fatalf("second diagnostics should be empty but got: %v", d[uri2])
+		t.Fatalf("first range.start.line should be %v but got: %v", 0, d[uri2][0].Range.Start.Line)
 	}
 }
 

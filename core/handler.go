@@ -32,10 +32,6 @@ type LangHandler struct {
 	formatTimer    *time.Timer
 	RootPath       string
 	rootMarkers    []string
-
-	// lastPublishedURIs is mapping from LanguageID string to mapping of
-	// whether diagnostics are published in a DocumentURI or not.
-	lastPublishedURIs map[string]map[types.DocumentURI]struct{}
 }
 
 type fileRef struct {
@@ -65,8 +61,6 @@ func NewHandler(logger *log.Logger, config *types.Config) *LangHandler {
 		formatDebounce: config.FormatDebounce,
 		formatTimer:    nil,
 		rootMarkers:    *config.RootMarkers,
-
-		lastPublishedURIs: make(map[string]map[types.DocumentURI]struct{}),
 	}
 	return handler
 }
