@@ -23,9 +23,7 @@ func TestLintNoLinter(t *testing.T) {
 	}
 
 	_, err := h.lintDocument(context.Background(), nil, "file:///foo", types.EventTypeChange)
-	if err != nil {
-		t.Fatal("Should not be an error if no linters")
-	}
+	assert.NoError(t, err)
 }
 
 func TestLintNoFileMatched(t *testing.T) {
@@ -38,9 +36,7 @@ func TestLintNoFileMatched(t *testing.T) {
 	}
 
 	_, err := h.lintDocument(context.Background(), nil, "file:///bar", types.EventTypeChange)
-	if err == nil {
-		t.Fatal("Should be an error if no linters")
-	}
+	assert.NoError(t, err)
 }
 
 func TestLintFileMatched(t *testing.T) {
@@ -69,10 +65,9 @@ func TestLintFileMatched(t *testing.T) {
 	}
 
 	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	assert.NoError(t, err)
+
 	d := uriToDiag[uri]
-	if err != nil {
-		t.Fatal(err)
-	}
 	if len(d) != 1 {
 		t.Fatal("diagnostics should be only one", d)
 	}
@@ -90,7 +85,7 @@ func TestLintFileMatched(t *testing.T) {
 	}
 }
 
-func TestLintFileMatchedForce(t *testing.T) {
+func TestLintFileMatchedWildcard(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
 	uri := toURI(file)
@@ -116,10 +111,9 @@ func TestLintFileMatchedForce(t *testing.T) {
 	}
 
 	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	assert.NoError(t, err)
+
 	d := uriToDiag[uri]
-	if err != nil {
-		t.Fatal(err)
-	}
 	if len(d) != 1 {
 		t.Fatal("diagnostics should be only one")
 	}
