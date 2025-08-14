@@ -39,3 +39,12 @@ func itoaPtrIfNotZero(n int) *string {
 	s := strconv.Itoa(n)
 	return &s
 }
+
+func boolOrDefault(b *bool, def bool) bool {
+	if b == nil {
+		return def
+	}
+	return *b
+}
+
+func boolPtr(v bool) *bool { return &v }

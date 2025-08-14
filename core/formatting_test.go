@@ -117,7 +117,6 @@ func TestRangeFormatting_RequireRootMatcher(t *testing.T) {
 				{
 					LintCommand:        `echo ` + filepath + `:2:No it is normal!`,
 					LintIgnoreExitCode: true,
-					LintAfterOpen:      true,
 					LintStdin:          true,
 					RequireMarker:      true,
 					RootMarkers:        []string{".vimlintrc"},

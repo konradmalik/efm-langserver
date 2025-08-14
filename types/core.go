@@ -4,36 +4,38 @@ import "time"
 
 const Wildcard = "="
 
-// Config is
 type Config struct {
-	Version        int
-	LogLevel       int
-	Languages      *map[string][]Language
-	RootMarkers    *[]string
-	LintDebounce   time.Duration
-	FormatDebounce time.Duration
+	Version        int                    `json:"version,omitempty"`
+	LogLevel       int                    `json:"logLevel,omitempty"`
+	Languages      *map[string][]Language `json:"languages,omitempty"`
+	RootMarkers    *[]string              `json:"rootMarkers,omitempty"`
+	LintDebounce   time.Duration          `json:"lintDebounce,omitempty"`
+	FormatDebounce time.Duration          `json:"formatDebounce,omitempty"`
 }
 
-// Language is
 type Language struct {
-	Prefix             string
-	LintFormats        []string
-	LintStdin          bool
-	LintOffset         int
-	LintOffsetColumns  int
-	LintCommand        string
-	LintIgnoreExitCode bool
-	LintCategoryMap    map[string]string
-	LintSource         string
-	LintSeverity       DiagnosticSeverity
-	LintAfterOpen      bool
-	LintOnSave         bool
-	FormatCommand      string
-	FormatCanRange     bool
-	FormatStdin        bool
-	Env                []string
-	RootMarkers        []string
-	RequireMarker      bool
+	Prefix             string             `json:"prefix,omitempty"`
+	LintFormats        []string           `json:"lintFormats,omitempty"`
+	LintStdin          bool               `json:"lintStdin,omitempty"`
+	LintOffset         int                `json:"lintOffset,omitempty"`
+	LintOffsetColumns  int                `json:"lintOffsetColumns,omitempty"`
+	LintCommand        string             `json:"lintCommand,omitempty"`
+	LintIgnoreExitCode bool               `json:"lintIgnoreExitCode,omitempty"`
+	LintCategoryMap    map[string]string  `json:"lintCategoryMap,omitempty"`
+	LintSource         string             `json:"lintSource,omitempty"`
+	LintSeverity       DiagnosticSeverity `json:"lintSeverity,omitempty"`
+	// defaults to true if not provided as a sanity default
+	LintAfterOpen *bool `json:"lintAfterOpen,omitempty"`
+	// defaults to true if not provided as a sanity default
+	LintOnChange *bool `json:"lintOnChange,omitempty"`
+	// defaults to true if not provided as a sanity default
+	LintOnSave     *bool    `json:"lintOnSave,omitempty"`
+	FormatCommand  string   `json:"formatCommand,omitempty"`
+	FormatCanRange bool     `json:"formatCanRange,omitempty"`
+	FormatStdin    bool     `json:"formatStdin,omitempty"`
+	Env            []string `json:"env,omitempty"`
+	RootMarkers    []string `json:"rootMarkers,omitempty"`
+	RequireMarker  bool     `json:"requireMarker,omitempty"`
 }
 
 type EventType int

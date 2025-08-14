@@ -173,13 +173,15 @@ func lintConfigsForDocument(fname, langId string, allConfigs map[string][]types.
 			}
 			switch eventType {
 			case types.EventTypeOpen:
-				// if LintAfterOpen is not true, ignore didOpen
-				if !cfg.LintAfterOpen {
+				if !boolOrDefault(cfg.LintAfterOpen, true) {
 					continue
 				}
 			case types.EventTypeChange:
-				// if LintOnSave is true, ignore didChange
-				if cfg.LintOnSave {
+				if !boolOrDefault(cfg.LintOnChange, true) {
+					continue
+				}
+			case types.EventTypeSave:
+				if !boolOrDefault(cfg.LintOnSave, true) {
 					continue
 				}
 			default:

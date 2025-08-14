@@ -475,7 +475,7 @@ func TestLintNoDiagnostics(t *testing.T) {
 	}
 }
 
-func TestLintOnSave(t *testing.T) {
+func TestLintEventTypes(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
 	uri := toURI(file)
@@ -489,7 +489,6 @@ func TestLintOnSave(t *testing.T) {
 					LintCommand:        `echo ` + file + `:2:No it is normal!`,
 					LintIgnoreExitCode: true,
 					LintStdin:          true,
-					LintOnSave:         true,
 				},
 			},
 		},
@@ -501,34 +500,65 @@ func TestLintOnSave(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
-	if err != nil {
-		t.Fatal(err)
-	}
-	d := uriToDiag[uri]
-	if len(d) != 0 {
-		t.Fatal("diagnostics should be empty", d)
+	tests := []struct {
+		name           string
+		event          types.EventType
+		lintAfterOpen  bool
+		lintOnSave     bool
+		lintOnChange   bool
+		expectMessages int
+	}{
+		{
+			name:           "LintOnOpen true",
+			event:          types.EventTypeOpen,
+			lintAfterOpen:  true,
+			expectMessages: 1,
+		},
+		{
+			name:           "LintOnOpen false",
+			event:          types.EventTypeOpen,
+			lintAfterOpen:  false,
+			expectMessages: 0,
+		},
+		{
+			name:           "LintOnChange true",
+			event:          types.EventTypeChange,
+			lintOnChange:   true,
+			expectMessages: 1,
+		},
+		{
+			name:           "LintOnChange false",
+			event:          types.EventTypeChange,
+			lintOnChange:   false,
+			expectMessages: 0,
+		},
+		{
+			name:           "LintOnSave true",
+			event:          types.EventTypeSave,
+			lintOnSave:     true,
+			expectMessages: 1,
+		},
+		{
+			name:           "LintOnSave false",
+			event:          types.EventTypeSave,
+			lintOnSave:     false,
+			expectMessages: 0,
+		},
 	}
 
-	uriToDiag, err = h.lintDocument(context.Background(), nil, uri, types.EventTypeSave)
-	if err != nil {
-		t.Fatal(err)
-	}
-	d = uriToDiag[uri]
-	if len(d) != 1 {
-		t.Fatal("diagnostics should be only one", d)
-	}
-	if d[0].Range.Start.Line != 1 {
-		t.Fatalf("range.start.line should be %v but got: %v", 1, d[0].Range.Start.Line)
-	}
-	if d[0].Range.Start.Character != 0 {
-		t.Fatalf("range.start.character should be %v but got: %v", 0, d[0].Range.Start.Character)
-	}
-	if d[0].Severity != 1 {
-		t.Fatalf("severity should be %v but got: %v", 0, d[0].Severity)
-	}
-	if strings.TrimSpace(d[0].Message) != "No it is normal!" {
-		t.Fatalf("message should be %q but got: %q", "No it is normal!", strings.TrimSpace(d[0].Message))
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h.configs["vim"][0].LintAfterOpen = boolPtr(tt.lintAfterOpen)
+			h.configs["vim"][0].LintOnChange = boolPtr(tt.lintOnChange)
+			h.configs["vim"][0].LintOnSave = boolPtr(tt.lintOnSave)
+			uriToDiag, err := h.lintDocument(context.Background(), nil, uri, tt.event)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			d := uriToDiag[uri]
+			assert.Equal(t, tt.expectMessages, len(d))
+		})
 	}
 }
 
