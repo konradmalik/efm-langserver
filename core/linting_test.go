@@ -390,7 +390,6 @@ func TestLintSingleEntry(t *testing.T) {
 	}
 }
 
-// Test if lint can return diagnostics for multiple files even when cancelled
 func TestLintMultipleEntries(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
@@ -404,7 +403,7 @@ func TestLintMultipleEntries(t *testing.T) {
 		configs: map[string][]types.Language{
 			"vim": {
 				{
-					LintCommand:        `echo ` + file + `:2:1:First file! && echo ` + file2 + `:1:2:Second file! && echo ` + file2 + `:Empty l and c!`,
+					LintCommand:        `echo ` + file + `:2:1:First file! && echo ` + file2 + `:2:3:Second file! && echo ` + file2 + `:Empty l and c!`,
 					LintFormats:        []string{"%f:%l:%c:%m", "%f:%m"},
 					LintIgnoreExitCode: true,
 				},
@@ -427,14 +426,15 @@ func TestLintMultipleEntries(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(d) != 1 {
-		t.Fatalf("diagnostics should be one, but got %#v", d)
+		t.Fatalf("diagnostics should be for one file, but got %#v", d)
 	}
-	if d[uri2][0].Range.Start.Character != 1 {
-		t.Fatalf("first range.start.character should be %v but got: %v", 1, d[uri2][0].Range.Start.Character)
+	if len(d[uri2]) != 2 {
+		t.Fatalf("should have two diagnostics, but got %#v", d[uri2])
 	}
-	if d[uri2][0].Range.Start.Line != 0 {
-		t.Fatalf("first range.start.line should be %v but got: %v", 0, d[uri2][0].Range.Start.Line)
-	}
+	assert.Equal(t, 2, d[uri2][0].Range.Start.Character)
+	assert.Equal(t, 1, d[uri2][0].Range.Start.Line)
+	assert.Equal(t, 0, d[uri2][1].Range.Start.Character)
+	assert.Equal(t, 0, d[uri2][1].Range.Start.Line)
 }
 
 func TestLintNoDiagnostics(t *testing.T) {

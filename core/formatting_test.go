@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -12,15 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNormalizeFilename(t *testing.T) {
-	uri := types.DocumentURI("file:///tmp/testfile.txt")
-	fname, err := normalizeFilename(uri)
+func TestNormalizedFilenameFromURI(t *testing.T) {
+	uri := types.DocumentURI("file:///tmp/TestFile.txt")
+	fname, err := normalizedFilenameFromUri(uri)
 	assert.NoError(t, err)
-	assert.True(t, strings.HasSuffix(fname, "/tmp/testfile.txt"))
-
-	if runtime.GOOS == "windows" {
-		assert.Equal(t, strings.ToLower(fname), fname, "filename should be lowercase on Windows")
-	}
+	assert.Equal(t, "/tmp/TestFile.txt", fname)
 }
 
 func TestApplyOptionsPlaceholders_DefaultTypes(t *testing.T) {
@@ -79,10 +74,6 @@ func TestApplyFormattingCommand_WithStdin(t *testing.T) {
 	tmpDir := t.TempDir()
 	script := filepath.Join(tmpDir, "script.sh")
 	scriptContent := "#!/bin/sh\ncat -"
-	if runtime.GOOS == "windows" {
-		script = filepath.Join(tmpDir, "script.bat")
-		scriptContent = "@echo off\ntype con"
-	}
 	err := os.WriteFile(script, []byte(scriptContent), 0755)
 	assert.NoError(t, err)
 

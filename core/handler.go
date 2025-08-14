@@ -286,7 +286,7 @@ func matchRootPath(fname string, markers []string) string {
 	return ""
 }
 
-func isFilename(s string) bool {
+func isStdinPlaceholder(s string) bool {
 	switch s {
 	case "stdin", "-", "<text>", "<stdin>":
 		return true

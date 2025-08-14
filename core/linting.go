@@ -80,7 +80,7 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 		return nil, fmt.Errorf("document not found: %v", uri)
 	}
 
-	fname, err := normalizeFilename(uri)
+	fname, err := normalizedFilenameFromUri(uri)
 	if err != nil {
 		return nil, err
 	}
@@ -125,19 +125,14 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 				continue
 			}
 
-			entryFilename, ok := normalizeEntryFilename(entry.Filename, &config, fname)
-			if !ok {
-				continue
-			}
-			entry.Filename = entryFilename
-
-			diagURI, ok := createDiagnosticsUri(rootPath, uri, entry)
-			if !ok {
+			entry.Filename = replaceStdinInEntryFilename(entry.Filename, &config, fname)
+			if !isEntryForRequestedURI(rootPath, uri, entry) {
+				// entry for a different file, skip
 				continue
 			}
 
 			diagnostic := parseEfmEntryToDiagnostic(entry, &config, f)
-			uriToDiagnostics[diagURI] = append(uriToDiagnostics[diagURI], diagnostic)
+			uriToDiagnostics[uri] = append(uriToDiagnostics[uri], diagnostic)
 		}
 	}
 
@@ -255,44 +250,30 @@ func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
 	return lintOutput, nil
 }
 
-func createDiagnosticsUri(rootPath string, uri types.DocumentURI, entry *errorformat.Entry) (types.DocumentURI, bool) {
-	diagURI := uri
-	if entry.Filename != "" {
-		if filepath.IsAbs(entry.Filename) {
-			diagURI = toURI(entry.Filename)
-		} else {
-			diagURI = toURI(filepath.Join(rootPath, entry.Filename))
-		}
+func replaceStdinInEntryFilename(entryFilename string, config *types.Language, fname string) string {
+	if config.LintStdin && isStdinPlaceholder(entryFilename) {
+		entryFilename = fname
 	}
-	if runtime.GOOS == "windows" {
-		if !strings.EqualFold(string(diagURI), string(uri)) {
-			return diagURI, false
-		}
-	} else {
-		if diagURI != uri {
-			return diagURI, false
-		}
-	}
-	return diagURI, true
+	return filepath.ToSlash(entryFilename)
 }
 
-func normalizeEntryFilename(entryFilename string, config *types.Language, fname string) (string, bool) {
-	if config.LintStdin && isFilename(entryFilename) {
-		entryFilename = fname
-		path, err := filepath.Abs(entryFilename)
-		if err != nil {
-			return entryFilename, false
-		}
-		path = filepath.ToSlash(path)
-		if runtime.GOOS == "windows" && !strings.EqualFold(path, fname) {
-			return entryFilename, false
-		} else if path != fname {
-			return entryFilename, false
-		}
-	} else {
-		entryFilename = filepath.ToSlash(entryFilename)
+func isEntryForRequestedURI(rootPath string, uri types.DocumentURI, entry *errorformat.Entry) bool {
+	// if entry.Filename is empty, we simply assume it's for this file
+	if entry.Filename == "" {
+		return true
 	}
-	return entryFilename, true
+	// if entry.Filename is not empty, we need to check if this entry is indeed for this uri
+	var diagURI types.DocumentURI
+	if filepath.IsAbs(entry.Filename) {
+		diagURI = toURI(entry.Filename)
+	} else {
+		diagURI = toURI(filepath.Join(rootPath, entry.Filename))
+	}
+	// windows FS is case insensitive
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(string(diagURI), string(uri))
+	}
+	return diagURI == uri
 }
 
 func parseEfmEntryToDiagnostic(entry *errorformat.Entry, config *types.Language, f *fileRef) types.Diagnostic {

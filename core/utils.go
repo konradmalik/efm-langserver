@@ -20,7 +20,7 @@ const (
 	newlineChar      = "\r"
 )
 
-func normalizeFilename(uri types.DocumentURI) (string, error) {
+func normalizedFilenameFromUri(uri types.DocumentURI) (string, error) {
 	fname, err := fromURI(uri)
 	if err != nil {
 		return "", fmt.Errorf("invalid uri: %v: %v", err, uri)

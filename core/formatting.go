@@ -43,7 +43,7 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 		return nil, fmt.Errorf("document not found: %v", uri)
 	}
 
-	fname, err := normalizeFilename(uri)
+	fname, err := normalizedFilenameFromUri(uri)
 	if err != nil {
 		return nil, err
 	}
