@@ -85,7 +85,7 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 		return nil, err
 	}
 
-	configs := lintConfigsForDocument(fname, f.LanguageID, h.configs, eventType)
+	configs := getLintConfigsForDocument(fname, f.LanguageID, h.configs, eventType)
 	if len(configs) == 0 {
 		h.logUnsupportedLint(f.LanguageID)
 		return nil, nil
@@ -96,10 +96,6 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 	}
 
 	for _, config := range configs {
-		if config.LintCommand == "" {
-			continue
-		}
-
 		rootPath := h.findRootPath(fname, config)
 		command := buildLintCommand(ctx, rootPath, f, fname, &config)
 
@@ -163,40 +159,32 @@ func getSeverity(typ rune, categoryMap map[string]string, defaultSeverity types.
 	return severity
 }
 
-func lintConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language, eventType types.EventType) []types.Language {
+func getLintConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language, eventType types.EventType) []types.Language {
 	var configs []types.Language
-	if cfgs, ok := allConfigs[langId]; ok {
-		for _, cfg := range cfgs {
-			// if we require markers and find that they dont exist we do not add the configuration
-			if dir := matchRootPath(fname, cfg.RootMarkers); dir == "" && cfg.RequireMarker {
+	for _, cfg := range getAllConfigsForLang(allConfigs, langId) {
+		if cfg.LintCommand == "" {
+			continue
+		}
+		// if we require markers and find that they dont exist we do not add the configuration
+		if dir := matchRootPath(fname, cfg.RootMarkers); dir == "" && cfg.RequireMarker {
+			continue
+		}
+		switch eventType {
+		case types.EventTypeOpen:
+			if !boolOrDefault(cfg.LintAfterOpen, true) {
 				continue
 			}
-			switch eventType {
-			case types.EventTypeOpen:
-				if !boolOrDefault(cfg.LintAfterOpen, true) {
-					continue
-				}
-			case types.EventTypeChange:
-				if !boolOrDefault(cfg.LintOnChange, true) {
-					continue
-				}
-			case types.EventTypeSave:
-				if !boolOrDefault(cfg.LintOnSave, true) {
-					continue
-				}
-			default:
+		case types.EventTypeChange:
+			if !boolOrDefault(cfg.LintOnChange, true) {
+				continue
 			}
-			if cfg.LintCommand != "" {
-				configs = append(configs, cfg)
+		case types.EventTypeSave:
+			if !boolOrDefault(cfg.LintOnSave, true) {
+				continue
 			}
+		default:
 		}
-	}
-	if cfgs, ok := allConfigs[types.Wildcard]; ok {
-		for _, cfg := range cfgs {
-			if cfg.LintCommand != "" {
-				configs = append(configs, cfg)
-			}
-		}
+		configs = append(configs, cfg)
 	}
 	return configs
 }
@@ -237,10 +225,6 @@ func buildLintCommand(ctx context.Context, rootPath string, f *fileRef, fname st
 
 func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
 	lintOutput, lintCmdError := cmd.CombinedOutput()
-	if lintCmdError != nil && execCancelled(lintCmdError) {
-		return lintOutput, nil
-	}
-
 	// Most of lint tools exit with non-zero value. But some commands
 	// return with zero value. We can not handle the output is real result
 	// or output of usage. So efm-langserver ignore that command exiting

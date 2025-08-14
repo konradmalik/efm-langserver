@@ -32,6 +32,17 @@ func normalizedFilenameFromUri(uri types.DocumentURI) (string, error) {
 	return fname, nil
 }
 
+func getAllConfigsForLang(allConfigs map[string][]types.Language, langId string) []types.Language {
+	configsForLang := make([]types.Language, 0)
+	if cfgs, ok := allConfigs[langId]; ok {
+		configsForLang = append(configsForLang, cfgs...)
+	}
+	if cfgs, ok := allConfigs[types.Wildcard]; ok {
+		configsForLang = append(configsForLang, cfgs...)
+	}
+	return configsForLang
+}
+
 func itoaPtrIfNotZero(n int) *string {
 	if n == 0 {
 		return nil

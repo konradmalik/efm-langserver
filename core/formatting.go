@@ -48,7 +48,7 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 		return nil, err
 	}
 
-	configs := formatConfigsForDocument(fname, f.LanguageID, h.configs)
+	configs := getFormatConfigsForDocument(fname, f.LanguageID, h.configs)
 	if len(configs) == 0 {
 		h.logUnsupportedFormat(f.LanguageID)
 		return nil, nil
@@ -59,19 +59,14 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 	formatted := false
 
 	for _, config := range configs {
-		cmdStr, err := buildFormatCommand(config, fname, options, rng, formattedText, h.RootPath)
+		rootPath := h.findRootPath(fname, config)
+		cmd, err := buildFormatCommand(rootPath, f, fname, options, rng, &config)
 		if err != nil {
 			h.logger.Println("command build error:", err)
 			continue
 		}
 
-		out, err := applyFormattingCommand(
-			cmdStr,
-			formattedText,
-			h.findRootPath(fname, config),
-			config.Env,
-			config.FormatStdin,
-		)
+		out, err := runFormattingCommand(cmd)
 		if err != nil {
 			h.logger.Println("formatting error:", err)
 			continue
@@ -79,7 +74,7 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 
 		formatted = true
 		if h.loglevel >= 3 {
-			h.logger.Println(cmdStr+":", string(out))
+			h.logger.Println(cmd.String()+":", string(out))
 		}
 		formattedText = strings.ReplaceAll(out, newlineChar, "")
 	}
@@ -92,34 +87,6 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 		h.logger.Println("format succeeded")
 	}
 	return ComputeEdits(uri, originalText, formattedText)
-}
-
-func buildFormatCommand(config types.Language, fname string, options types.FormattingOptions, rng *types.Range, text, rootPath string) (string, error) {
-	if config.FormatCommand == "" {
-		return "", errors.New("empty format command")
-	}
-
-	cmd := config.FormatCommand
-	if !config.FormatStdin && !strings.Contains(cmd, inputPlaceholder) {
-		cmd += " " + inputPlaceholder
-	}
-	cmd = replaceCommandInputFilename(cmd, fname, rootPath)
-
-	var err error
-	cmd, err = applyOptionsPlaceholders(cmd, options)
-	if err != nil {
-		return "", err
-	}
-
-	if rng != nil {
-		cmd, err = applyRangePlaceholders(cmd, rng, text)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	cmd = unfilledPlaceholders.ReplaceAllString(cmd, "")
-	return cmd, nil
 }
 
 func applyOptionsPlaceholders(command string, options types.FormattingOptions) (string, error) {
@@ -150,8 +117,9 @@ func applyOptionsPlaceholders(command string, options types.FormattingOptions) (
 }
 
 func applyRangePlaceholders(command string, rng *types.Range, text string) (string, error) {
-	charStart := convertRowColToIndex(text, rng.Start.Line, rng.Start.Character)
-	charEnd := convertRowColToIndex(text, rng.End.Line, rng.End.Character)
+	lines := strings.Split(text, "\n")
+	charStart := convertRowColToIndex(lines, rng.Start.Line, rng.Start.Character)
+	charEnd := convertRowColToIndex(lines, rng.End.Line, rng.End.Character)
 
 	rangeOptions := map[string]int{
 		"charStart": charStart,
@@ -175,23 +143,52 @@ func applyRangePlaceholders(command string, rng *types.Range, text string) (stri
 	return command, nil
 }
 
-func applyFormattingCommand(command, text, workDir string, env []string, formatStdin bool) (string, error) {
+func buildFormatCommand(rootPath string, f *fileRef, fname string, options types.FormattingOptions, rng *types.Range, config *types.Language) (*exec.Cmd, error) {
+	if config.FormatCommand == "" {
+		return nil, errors.New("empty format command")
+	}
+
+	command := config.FormatCommand
+	if !config.FormatStdin && !strings.Contains(command, inputPlaceholder) {
+		command += " " + inputPlaceholder
+	}
+	command = replaceCommandInputFilename(command, fname, rootPath)
+
+	var err error
+	command, err = applyOptionsPlaceholders(command, options)
+	if err != nil {
+		return nil, err
+	}
+
+	if rng != nil {
+		command, err = applyRangePlaceholders(command, rng, f.Text)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	command = unfilledPlaceholders.ReplaceAllString(command, "")
+
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command(windowsShell, windowsShellArg, command)
 	} else {
 		cmd = exec.Command(unixShell, unixShellArg, command)
 	}
-	cmd.Dir = workDir
-	cmd.Env = append(os.Environ(), env...)
-	if formatStdin {
-		cmd.Stdin = strings.NewReader(text)
+	cmd.Dir = rootPath
+	cmd.Env = append(os.Environ(), config.Env...)
+	if config.FormatStdin {
+		cmd.Stdin = strings.NewReader(f.Text)
 	}
+	return cmd, nil
+}
+
+func runFormattingCommand(cmd *exec.Cmd) (string, error) {
 	var buf bytes.Buffer
 	cmd.Stderr = &buf
 	b, err := cmd.Output()
 	if err != nil {
-		return "", fmt.Errorf("%s: %s", command, buf.String())
+		return "", fmt.Errorf("%s: %s", strings.Join(cmd.Args, " "), buf.String())
 	}
 	return string(b), nil
 }
@@ -202,42 +199,26 @@ func (h *LangHandler) logUnsupportedFormat(langID string) {
 	}
 }
 
-func formatConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language) []types.Language {
+func getFormatConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language) []types.Language {
 	var configs []types.Language
-	if cfgs, ok := allConfigs[langId]; ok {
-		for _, cfg := range cfgs {
-			if cfg.FormatCommand != "" {
-				if dir := matchRootPath(fname, cfg.RootMarkers); dir == "" && cfg.RequireMarker {
-					continue
-				}
-				configs = append(configs, cfg)
-			}
+	for _, cfg := range getAllConfigsForLang(allConfigs, langId) {
+		if cfg.FormatCommand == "" {
+			continue
 		}
-	}
-	if cfgs, ok := allConfigs[types.Wildcard]; ok {
-		for _, cfg := range cfgs {
-			if cfg.FormatCommand != "" {
-				configs = append(configs, cfg)
-			}
+		if dir := matchRootPath(fname, cfg.RootMarkers); dir == "" && cfg.RequireMarker {
+			continue
 		}
+		configs = append(configs, cfg)
 	}
 	return configs
 }
 
-func convertRowColToIndex(s string, row, col int) int {
-	lines := strings.Split(s, "\n")
+func convertRowColToIndex(lines []string, row, col int) int {
+	row = max(row, 0)
+	row = min(row, len(lines)-1)
 
-	if row < 0 {
-		row = 0
-	} else if row >= len(lines) {
-		row = len(lines) - 1
-	}
-
-	if col < 0 {
-		col = 0
-	} else if col > len(lines[row]) {
-		col = len(lines[row])
-	}
+	col = max(col, 0)
+	col = min(col, len(lines[row]))
 
 	index := 0
 	for i := 0; i < row; i++ {

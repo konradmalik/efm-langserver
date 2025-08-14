@@ -62,25 +62,32 @@ func TestApplyRangePlaceholders(t *testing.T) {
 	assert.Contains(t, out, "--flag=4")
 }
 
-func TestBuildCommand_RemovesUnfilled(t *testing.T) {
-	cfg := types.Language{FormatCommand: "echo ${flag:opt}"}
+func TestBuildCommand_HandlesPlaxceholders(t *testing.T) {
+	cfg := types.Language{FormatCommand: "echo ${flag:opt} ${anotherflag:tpo}"}
 	opts := types.FormattingOptions{"opt": "value"}
-	cmd, err := buildFormatCommand(cfg, "file.txt", opts, nil, "text", "/root")
+	f := fileRef{Text: "text", LanguageID: "go"}
+
+	cmd, err := buildFormatCommand("/root", &f, "file.txt", opts, nil, &cfg)
+
 	assert.NoError(t, err)
-	assert.NotContains(t, cmd, "${")
+
+	cmdStr := strings.Join(cmd.Args, " ")
+	assert.Contains(t, cmdStr, "flag value")
+	assert.NotContains(t, cmdStr, "anotherflag")
+	assert.Contains(t, cmdStr, "file.txt")
 }
 
-func TestApplyFormattingCommand_WithStdin(t *testing.T) {
+func TestRunFormattingCommand_WithStdin(t *testing.T) {
+	cfg := types.Language{FormatCommand: "cat -", FormatStdin: true}
+	f := fileRef{Text: "hello text", LanguageID: "go"}
+
 	tmpDir := t.TempDir()
-	script := filepath.Join(tmpDir, "script.sh")
-	scriptContent := "#!/bin/sh\ncat -"
-	err := os.WriteFile(script, []byte(scriptContent), 0755)
+	cmd, err := buildFormatCommand(tmpDir, &f, "file.txt", nil, nil, &cfg)
 	assert.NoError(t, err)
 
-	cmd := script
-	out, err := applyFormattingCommand(cmd, "hello", tmpDir, nil, true)
+	out, err := runFormattingCommand(cmd)
 	assert.NoError(t, err)
-	assert.Equal(t, "hello", strings.TrimSpace(out))
+	assert.Equal(t, "hello text", strings.TrimSpace(out))
 }
 
 func TestRangeFormatting_Success(t *testing.T) {

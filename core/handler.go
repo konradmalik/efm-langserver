@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -253,7 +252,7 @@ func toURI(path string) types.DocumentURI {
 }
 
 func matchRootPath(fname string, markers []string) string {
-	dir := filepath.Dir(filepath.Clean(fname))
+	dir := filepath.Dir(fname)
 	var prev string
 	for dir != prev {
 		files, _ := os.ReadDir(dir)
@@ -312,11 +311,4 @@ func escapeBrackets(path string) string {
 	path = strings.ReplaceAll(path, ")", `\)`)
 
 	return path
-}
-
-func execCancelled(err error) bool {
-	exitErr, ok := err.(*exec.ExitError)
-	// When the context is canceled, the process is killed,
-	// and the exit code is -1
-	return ok && exitErr.ExitCode() < 0
 }

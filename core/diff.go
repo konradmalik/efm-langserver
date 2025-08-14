@@ -21,6 +21,7 @@ func ComputeEdits(name types.DocumentURI, before, after string) ([]types.TextEdi
 		for _, l := range h.Lines {
 			switch l.Kind {
 			case udiff.Equal:
+				newText += l.Content
 				endLine++
 			case udiff.Delete:
 				endLine++
