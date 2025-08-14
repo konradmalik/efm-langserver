@@ -36,7 +36,7 @@ func TestLintNoFileMatched(t *testing.T) {
 	}
 
 	_, err := h.lintDocument(context.Background(), nil, "file:///bar", types.EventTypeChange)
-	assert.NoError(t, err)
+	assert.Error(t, err)
 }
 
 func TestLintFileMatched(t *testing.T) {

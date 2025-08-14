@@ -194,14 +194,14 @@ func (f *fileRef) wordAt(pos types.Position) string {
 	currPos := -1
 	prevCls := unicodeclass.Invalid
 	for i, char := range chars {
+		if char == '_' {
+			continue
+		}
 		currCls := unicodeclass.Is(rune(char))
 		if currCls != prevCls {
 			if i <= pos.Character {
 				prevPos = i
 			} else {
-				if char == '_' {
-					continue
-				}
 				currPos = i
 				break
 			}
