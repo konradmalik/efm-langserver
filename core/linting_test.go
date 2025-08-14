@@ -558,22 +558,171 @@ func TestGetSeverity(t *testing.T) {
 }
 
 func TestParseEfmEntryToDiagnostic(t *testing.T) {
-	entry := &errorformat.Entry{
-		Filename: "file.txt",
-		Lnum:     1,
-		Col:      3,
-		Text:     "something bad",
-		Type:     'E',
+	file := &fileRef{Text: "hello world\ngolang rulezz", LanguageID: "txt"}
+	tests := []struct {
+		name     string
+		entry    *errorformat.Entry
+		cfg      *types.Language
+		expected types.Diagnostic
+	}{
+		{
+			name: "first line as 1, word",
+			entry: &errorformat.Entry{
+				Lnum: 1,
+				Col:  7,
+				Text: "world bad",
+				Type: 'E',
+			},
+			cfg: &types.Language{
+				LintOffset:        0,
+				LintOffsetColumns: 0,
+			},
+			expected: types.Diagnostic{
+				Message:  "world bad",
+				Severity: types.Error,
+				Range: types.Range{
+					Start: types.Position{Line: 0, Character: 6},
+					End:   types.Position{Line: 0, Character: 11},
+				},
+			},
+		},
+		{
+			name: "first line as 0, word",
+			entry: &errorformat.Entry{
+				Lnum: 0,
+				Col:  7,
+				Text: "world bad",
+				Type: 'E',
+			},
+			cfg: &types.Language{
+				LintOffset:        0,
+				LintOffsetColumns: 0,
+			},
+			expected: types.Diagnostic{
+				Message:  "world bad",
+				Severity: types.Error,
+				Range: types.Range{
+					Start: types.Position{Line: 0, Character: 6},
+					End:   types.Position{Line: 0, Character: 11},
+				},
+			},
+		},
+		{
+			name: "second line, word",
+			entry: &errorformat.Entry{
+				Lnum: 2,
+				Col:  1,
+				Text: "golang bad",
+				Type: 'E',
+			},
+			cfg: &types.Language{
+				LintOffset:        0,
+				LintOffsetColumns: 0,
+			},
+			expected: types.Diagnostic{
+				Message:  "golang bad",
+				Severity: types.Error,
+				Range: types.Range{
+					Start: types.Position{Line: 1, Character: 0},
+					End:   types.Position{Line: 1, Character: 6},
+				},
+			},
+		},
+		{
+			name: "second line, whole",
+			entry: &errorformat.Entry{
+				Lnum: 2,
+				Col:  0,
+				Text: "golang not rulezz",
+				Type: 'E',
+			},
+			cfg: &types.Language{
+				LintOffset:        0,
+				LintOffsetColumns: 0,
+			},
+			expected: types.Diagnostic{
+				Message:  "golang not rulezz",
+				Severity: types.Error,
+				Range: types.Range{
+					Start: types.Position{Line: 1, Character: 0},
+					End:   types.Position{Line: 1, Character: 0},
+				},
+			},
+		},
+		{
+			name: "line offset is subtracted",
+			entry: &errorformat.Entry{
+				Lnum: 1,
+				Col:  7,
+				Text: "world bad",
+				Type: 'E',
+			},
+			cfg: &types.Language{
+				LintOffset:        -1,
+				LintOffsetColumns: 0,
+			},
+			expected: types.Diagnostic{
+				Message:  "world bad",
+				Severity: types.Error,
+				Range: types.Range{
+					Start: types.Position{Line: 1, Character: 6},
+					End:   types.Position{Line: 1, Character: 7},
+				},
+			},
+		},
+		{
+			name: "col offset is added",
+			entry: &errorformat.Entry{
+				Lnum: 1,
+				Col:  7,
+				Text: "world bad",
+				Type: 'E',
+			},
+			cfg: &types.Language{
+				LintOffset:        0,
+				LintOffsetColumns: 1,
+			},
+			expected: types.Diagnostic{
+				Message:  "world bad",
+				Severity: types.Error,
+				Range: types.Range{
+					Start: types.Position{Line: 0, Character: 7},
+					End:   types.Position{Line: 0, Character: 12},
+				},
+			},
+		},
+		{
+			name: "col offset is not added if whole line",
+			entry: &errorformat.Entry{
+				Lnum: 1,
+				Col:  0,
+				Text: "world bad",
+				Type: 'E',
+			},
+			cfg: &types.Language{
+				LintOffset:        0,
+				LintOffsetColumns: 11,
+			},
+			expected: types.Diagnostic{
+				Message:  "world bad",
+				Severity: types.Error,
+				Range: types.Range{
+					Start: types.Position{Line: 0, Character: 0},
+					End:   types.Position{Line: 0, Character: 0},
+				},
+			},
+		},
 	}
-	cfg := &types.Language{
-		LintOffset:        0,
-		LintOffsetColumns: 1,
-	}
-	f := &fileRef{Text: "hello world\nworld hello", LanguageID: "txt"}
 
-	diag := parseEfmEntryToDiagnostic(entry, cfg, f)
-	assert.Equal(t, "something bad", diag.Message)
-	assert.Equal(t, types.Error, diag.Severity)
-	assert.Equal(t, 0, diag.Range.Start.Line)
-	assert.Equal(t, 3, diag.Range.Start.Character)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			diag := parseEfmEntryToDiagnostic(tt.entry, tt.cfg, file)
+			assert.Equal(t, tt.expected.Message, diag.Message)
+			assert.Equal(t, tt.expected.Severity, diag.Severity)
+			assert.Equal(t, tt.expected.Range.Start.Line, diag.Range.Start.Line)
+			assert.Equal(t, tt.expected.Range.Start.Character, diag.Range.Start.Character)
+			assert.Equal(t, tt.expected.Range.End.Line, diag.Range.End.Line)
+			assert.Equal(t, tt.expected.Range.End.Character, diag.Range.End.Character)
+		})
+	}
 }
