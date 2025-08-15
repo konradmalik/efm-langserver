@@ -132,6 +132,7 @@ type PublishDiagnosticsParams struct {
 	Version     int          `json:"version"`
 }
 
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#formattingOptions
 type FormattingOptions map[string]any
 
 type DocumentFormattingParams struct {
