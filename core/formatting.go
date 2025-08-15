@@ -41,12 +41,7 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 		return nil, fmt.Errorf("document not found: %v", uri)
 	}
 
-	fname, err := normalizedFilenameFromUri(uri)
-	if err != nil {
-		return nil, err
-	}
-
-	configs := getFormatConfigsForDocument(fname, f.LanguageID, h.configs)
+	configs := getFormatConfigsForDocument(f.NormalizedFilename, f.LanguageID, h.configs)
 	if len(configs) == 0 {
 		h.logUnsupportedFormat(f.LanguageID)
 		return nil, nil
@@ -57,8 +52,8 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 	formatted := false
 
 	for _, config := range configs {
-		rootPath := h.findRootPath(fname, config)
-		cmdStr, err := buildFormatCommandString(rootPath, fname, f, options, rng, config)
+		rootPath := h.findRootPath(f.NormalizedFilename, config)
+		cmdStr, err := buildFormatCommandString(rootPath, f, options, rng, config)
 		if err != nil {
 			h.logger.Println("command build error:", err)
 			continue
@@ -144,12 +139,12 @@ func applyRangePlaceholders(command string, rng *types.Range, text string) (stri
 	return command, nil
 }
 
-func buildFormatCommandString(rootPath, fname string, f *fileRef, options types.FormattingOptions, rng *types.Range, config types.Language) (string, error) {
+func buildFormatCommandString(rootPath string, f *fileRef, options types.FormattingOptions, rng *types.Range, config types.Language) (string, error) {
 	command := config.FormatCommand
 	if !config.FormatStdin && !strings.Contains(command, inputPlaceholder) {
 		command += " " + inputPlaceholder
 	}
-	command = replaceCommandInputFilename(command, fname, rootPath)
+	command = replaceCommandInputFilename(command, f.NormalizedFilename, rootPath)
 
 	var err error
 	command, err = applyOptionsPlaceholders(command, options)

@@ -79,12 +79,7 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 		return nil, fmt.Errorf("document not found: %v", uri)
 	}
 
-	fname, err := normalizedFilenameFromUri(uri)
-	if err != nil {
-		return nil, err
-	}
-
-	configs := getLintConfigsForDocument(fname, f.LanguageID, h.configs, eventType)
+	configs := getLintConfigsForDocument(f.NormalizedFilename, f.LanguageID, h.configs, eventType)
 	if len(configs) == 0 {
 		h.logUnsupportedLint(f.LanguageID)
 		return nil, nil
@@ -95,8 +90,8 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 	}
 
 	for _, config := range configs {
-		rootPath := h.findRootPath(fname, config)
-		cmdStr := buildLintCommandString(ctx, rootPath, fname, f, config)
+		rootPath := h.findRootPath(f.NormalizedFilename, config)
+		cmdStr := buildLintCommandString(ctx, rootPath, f, config)
 		cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.LintStdin)
 
 		lintOutput, err := runLintCommand(cmd, &config)
@@ -121,7 +116,7 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 				continue
 			}
 
-			entry.Filename = replaceStdinInEntryFilename(entry.Filename, &config, fname)
+			entry.Filename = replaceStdinInEntryFilename(entry.Filename, &config, f.NormalizedFilename)
 			if !isEntryForRequestedURI(rootPath, uri, entry) {
 				// entry for a different file, skip
 				continue
@@ -201,12 +196,12 @@ func buildErrorformats(configFormats []string) (*errorformat.Errorformat, error)
 	return efms, nil
 }
 
-func buildLintCommandString(ctx context.Context, rootPath, fname string, f *fileRef, config types.Language) string {
+func buildLintCommandString(ctx context.Context, rootPath string, f *fileRef, config types.Language) string {
 	command := config.LintCommand
 	if !config.LintStdin && !strings.Contains(command, inputPlaceholder) {
 		command = command + " " + inputPlaceholder
 	}
-	return replaceCommandInputFilename(command, fname, rootPath)
+	return replaceCommandInputFilename(command, f.NormalizedFilename, rootPath)
 }
 
 func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {

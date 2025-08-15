@@ -65,9 +65,9 @@ func TestApplyRangePlaceholders(t *testing.T) {
 func TestBuildCommand_HandlesPlaxceholders(t *testing.T) {
 	cfg := types.Language{FormatCommand: "echo ${flag:opt} ${anotherflag:tpo}"}
 	opts := types.FormattingOptions{"opt": "value"}
-	f := fileRef{Text: "text", LanguageID: "go"}
+	f := fileRef{Text: "text", LanguageID: "go", NormalizedFilename: "file.txt"}
 
-	cmdStr, err := buildFormatCommandString("/root", "file.txt", &f, opts, nil, cfg)
+	cmdStr, err := buildFormatCommandString("/root", &f, opts, nil, cfg)
 
 	assert.NoError(t, err)
 
@@ -78,10 +78,10 @@ func TestBuildCommand_HandlesPlaxceholders(t *testing.T) {
 
 func TestRunFormattingCommand_WithStdin(t *testing.T) {
 	cfg := types.Language{FormatCommand: "cat -", FormatStdin: true}
-	f := fileRef{Text: "hello text", LanguageID: "go"}
+	f := fileRef{Text: "hello text", LanguageID: "go", NormalizedFilename: "file.txt"}
 
 	tmpDir := t.TempDir()
-	cmdStr, err := buildFormatCommandString(tmpDir, "file.txt", &f, nil, nil, cfg)
+	cmdStr, err := buildFormatCommandString(tmpDir, &f, nil, nil, cfg)
 	assert.NoError(t, err)
 	cmd := buildExecCmd(t.Context(), cmdStr, tmpDir, &f, cfg, cfg.FormatStdin)
 
@@ -99,7 +99,7 @@ func TestRangeFormatting_Success(t *testing.T) {
 
 	h := &LangHandler{
 		files: map[types.DocumentURI]*fileRef{
-			types.DocumentURI("file://" + testfile): {Text: "hello", LanguageID: "go"},
+			types.DocumentURI("file://" + testfile): {Text: "hello", LanguageID: "go", NormalizedFilename: testfile},
 		},
 		configs: map[string][]types.Language{
 			"go": {{FormatCommand: "cat", RequireMarker: false}},

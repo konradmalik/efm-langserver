@@ -58,8 +58,9 @@ func TestLintFileMatched(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 		},
 	}
@@ -104,8 +105,9 @@ func TestLintFileMatchedWildcard(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 		},
 	}
@@ -154,8 +156,9 @@ func TestLintOffsetColumnsZero(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 		},
 	}
@@ -195,8 +198,9 @@ func TestLintOffsetColumnsNoOffset(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 		},
 	}
@@ -237,8 +241,9 @@ func TestLintOffsetColumnsNonZero(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 		},
 	}
@@ -282,8 +287,9 @@ func TestLintCategoryMap(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 		},
 	}
@@ -323,8 +329,9 @@ func TestLintRequireRootMarker(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 		},
 	}
@@ -359,12 +366,14 @@ func TestLintSingleEntry(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 			uri2: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file2,
 			},
 		},
 	}
@@ -405,12 +414,14 @@ func TestLintMultipleEntries(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 			uri2: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file2,
 			},
 		},
 	}
@@ -450,8 +461,9 @@ func TestLintNoDiagnostics(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 		},
 	}
@@ -488,8 +500,9 @@ func TestLintEventTypes(t *testing.T) {
 		},
 		files: map[types.DocumentURI]*fileRef{
 			uri: {
-				LanguageID: "vim",
-				Text:       "scriptencoding utf-8\nabnormal!\n",
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
 			},
 		},
 	}

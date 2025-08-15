@@ -33,9 +33,10 @@ type LangHandler struct {
 }
 
 type fileRef struct {
-	LanguageID string
-	Text       string
-	Version    int
+	Version            int
+	NormalizedFilename string
+	LanguageID         string
+	Text               string
 }
 
 func NewConfig() *types.Config {
@@ -144,10 +145,16 @@ func (h *LangHandler) OnSaveFile(notifier notifier, uri types.DocumentURI) error
 }
 
 func (h *LangHandler) OnOpenFile(notifier notifier, uri types.DocumentURI, languageID string, version int, text string) error {
+	fname, err := normalizedFilenameFromUri(uri)
+	if err != nil {
+		return err
+	}
+
 	f := &fileRef{
-		Text:       text,
-		LanguageID: languageID,
-		Version:    version,
+		Text:               text,
+		LanguageID:         languageID,
+		Version:            version,
+		NormalizedFilename: fname,
 	}
 	h.files[uri] = f
 
