@@ -67,11 +67,10 @@ func TestBuildCommand_HandlesPlaxceholders(t *testing.T) {
 	opts := types.FormattingOptions{"opt": "value"}
 	f := fileRef{Text: "text", LanguageID: "go"}
 
-	cmd, err := buildFormatCommand("/root", &f, "file.txt", opts, nil, &cfg)
+	cmdStr, err := buildFormatCommandString("/root", "file.txt", &f, opts, nil, cfg)
 
 	assert.NoError(t, err)
 
-	cmdStr := strings.Join(cmd.Args, " ")
 	assert.Contains(t, cmdStr, "flag value")
 	assert.NotContains(t, cmdStr, "anotherflag")
 	assert.Contains(t, cmdStr, "file.txt")
@@ -82,10 +81,12 @@ func TestRunFormattingCommand_WithStdin(t *testing.T) {
 	f := fileRef{Text: "hello text", LanguageID: "go"}
 
 	tmpDir := t.TempDir()
-	cmd, err := buildFormatCommand(tmpDir, &f, "file.txt", nil, nil, &cfg)
+	cmdStr, err := buildFormatCommandString(tmpDir, "file.txt", &f, nil, nil, cfg)
 	assert.NoError(t, err)
+	cmd := buildExecCmd(t.Context(), cmdStr, tmpDir, &f, cfg, cfg.FormatStdin)
 
 	out, err := runFormattingCommand(cmd)
+
 	assert.NoError(t, err)
 	assert.Equal(t, "hello text", strings.TrimSpace(out))
 }

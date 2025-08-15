@@ -2,12 +2,10 @@ package core
 
 import (
 	"bytes"
-	"errors"
+	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"regexp"
-	"runtime"
 	"strings"
 	"time"
 
@@ -60,23 +58,26 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 
 	for _, config := range configs {
 		rootPath := h.findRootPath(fname, config)
-		cmd, err := buildFormatCommand(rootPath, f, fname, options, rng, &config)
+		cmdStr, err := buildFormatCommandString(rootPath, fname, f, options, rng, config)
 		if err != nil {
 			h.logger.Println("command build error:", err)
 			continue
 		}
 
+		cmd := buildExecCmd(context.Background(), cmdStr, rootPath, f, config, config.FormatStdin)
 		out, err := runFormattingCommand(cmd)
+
+		if h.loglevel >= 3 {
+			h.logger.Println(cmdStr+":", string(out))
+		}
+
 		if err != nil {
 			h.logger.Println("formatting error:", err)
 			continue
 		}
 
 		formatted = true
-		if h.loglevel >= 3 {
-			h.logger.Println(cmd.String()+":", string(out))
-		}
-		formattedText = strings.ReplaceAll(out, newlineChar, "")
+		formattedText = strings.ReplaceAll(out, carriageReturn, "")
 	}
 
 	if !formatted {
@@ -143,11 +144,7 @@ func applyRangePlaceholders(command string, rng *types.Range, text string) (stri
 	return command, nil
 }
 
-func buildFormatCommand(rootPath string, f *fileRef, fname string, options types.FormattingOptions, rng *types.Range, config *types.Language) (*exec.Cmd, error) {
-	if config.FormatCommand == "" {
-		return nil, errors.New("empty format command")
-	}
-
+func buildFormatCommandString(rootPath, fname string, f *fileRef, options types.FormattingOptions, rng *types.Range, config types.Language) (string, error) {
 	command := config.FormatCommand
 	if !config.FormatStdin && !strings.Contains(command, inputPlaceholder) {
 		command += " " + inputPlaceholder
@@ -157,30 +154,17 @@ func buildFormatCommand(rootPath string, f *fileRef, fname string, options types
 	var err error
 	command, err = applyOptionsPlaceholders(command, options)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if rng != nil {
 		command, err = applyRangePlaceholders(command, rng, f.Text)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 
-	command = unfilledPlaceholders.ReplaceAllString(command, "")
-
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command(windowsShell, windowsShellArg, command)
-	} else {
-		cmd = exec.Command(unixShell, unixShellArg, command)
-	}
-	cmd.Dir = rootPath
-	cmd.Env = append(os.Environ(), config.Env...)
-	if config.FormatStdin {
-		cmd.Stdin = strings.NewReader(f.Text)
-	}
-	return cmd, nil
+	return unfilledPlaceholders.ReplaceAllString(command, ""), nil
 }
 
 func runFormattingCommand(cmd *exec.Cmd) (string, error) {

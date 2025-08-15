@@ -1,7 +1,10 @@
 package core
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -12,12 +15,8 @@ import (
 
 const (
 	flagPlaceholder  = "$1"
-	windowsShell     = "cmd"
-	windowsShellArg  = "/c"
-	unixShell        = "sh"
-	unixShellArg     = "-c"
 	inputPlaceholder = "${INPUT}"
-	newlineChar      = "\r"
+	carriageReturn   = "\r"
 )
 
 func normalizedFilenameFromUri(uri types.DocumentURI) (string, error) {
@@ -41,6 +40,22 @@ func getAllConfigsForLang(allConfigs map[string][]types.Language, langId string)
 		configsForLang = append(configsForLang, cfgs...)
 	}
 	return configsForLang
+}
+
+func buildExecCmd(ctx context.Context, command, rootPath string, f *fileRef, config types.Language, stdin bool) *exec.Cmd {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.CommandContext(ctx, "cmd", "/c", command)
+	} else {
+		cmd = exec.CommandContext(ctx, "sh", "-c", command)
+	}
+	cmd.Dir = rootPath
+	cmd.Env = append(os.Environ(), config.Env...)
+	if stdin {
+		cmd.Stdin = strings.NewReader(f.Text)
+	}
+
+	return cmd
 }
 
 func itoaPtrIfNotZero(n int) *string {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -97,11 +96,12 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 
 	for _, config := range configs {
 		rootPath := h.findRootPath(fname, config)
-		command := buildLintCommand(ctx, rootPath, f, fname, &config)
+		cmdStr := buildLintCommandString(ctx, rootPath, fname, f, config)
+		cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.LintStdin)
 
-		lintOutput, err := runLintCommand(command, &config)
+		lintOutput, err := runLintCommand(cmd, &config)
 		if h.loglevel >= 3 {
-			h.logger.Println(config.LintCommand+":", string(lintOutput))
+			h.logger.Println(cmdStr+":", string(lintOutput))
 		}
 		if err != nil {
 			notifier.LogMessage(ctx, types.LogError, err.Error())
@@ -201,26 +201,12 @@ func buildErrorformats(configFormats []string) (*errorformat.Errorformat, error)
 	return efms, nil
 }
 
-func buildLintCommand(ctx context.Context, rootPath string, f *fileRef, fname string, config *types.Language) *exec.Cmd {
+func buildLintCommandString(ctx context.Context, rootPath, fname string, f *fileRef, config types.Language) string {
 	command := config.LintCommand
 	if !config.LintStdin && !strings.Contains(command, inputPlaceholder) {
 		command = command + " " + inputPlaceholder
 	}
-	command = replaceCommandInputFilename(command, fname, rootPath)
-
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.CommandContext(ctx, windowsShell, windowsShellArg, command)
-	} else {
-		cmd = exec.CommandContext(ctx, unixShell, unixShellArg, command)
-	}
-	cmd.Dir = rootPath
-	cmd.Env = append(os.Environ(), config.Env...)
-	if config.LintStdin {
-		cmd.Stdin = strings.NewReader(f.Text)
-	}
-
-	return cmd
+	return replaceCommandInputFilename(command, fname, rootPath)
 }
 
 func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
