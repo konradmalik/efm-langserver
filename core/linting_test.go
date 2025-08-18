@@ -594,6 +594,69 @@ func TestGetSeverity(t *testing.T) {
 	}
 }
 
+func TestIsEntryForRequestedURI(t *testing.T) {
+	tests := []struct {
+		name     string
+		root     string
+		uri      string
+		entry    *errorformat.Entry
+		expected bool
+	}{
+		{
+			name: "main dir",
+			root: "/home/torvalds/linux/",
+			uri:  "file:///home/torvalds/linux/main.go",
+			entry: &errorformat.Entry{
+				Filename: "main.go",
+			},
+			expected: true,
+		},
+		{
+			name: "subdir without slash",
+			root: "/home/torvalds/linux/",
+			uri:  "file:///home/torvalds/linux/gpu/nvidia/driver.go",
+			entry: &errorformat.Entry{
+				Filename: "gpu/nvidia/driver.go",
+			},
+			expected: true,
+		},
+		{
+			name: "subdir with slash is absolute",
+			root: "/home/torvalds/linux/",
+			uri:  "file:///home/torvalds/linux/gpu/nvidia/driver.go",
+			entry: &errorformat.Entry{
+				Filename: "/gpu/nvidia/driver.go",
+			},
+			expected: false,
+		},
+		{
+			name: "empty filename is accepted",
+			root: "/home/torvalds/linux/",
+			uri:  "file:///home/torvalds/linux/gpu/nvidia/driver.go",
+			entry: &errorformat.Entry{
+				Filename: "",
+			},
+			expected: true,
+		},
+		{
+			name: "comparison is case sensitive",
+			root: "/home/torvalds/linux/",
+			uri:  "file:///home/torvalds/linux/main.go",
+			entry: &errorformat.Entry{
+				Filename: "Main.go",
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ok := isEntryForRequestedURI(tt.root, types.DocumentURI(tt.uri), tt.entry)
+			assert.Equal(t, tt.expected, ok)
+		})
+	}
+}
+
 func TestParseEfmEntryToDiagnostic(t *testing.T) {
 	file := &fileRef{Text: "hello world\ngolang rulezz", LanguageID: "txt"}
 	tests := []struct {
