@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/konradmalik/efm-langserver/types"
@@ -58,12 +57,11 @@ func buildExecCmd(ctx context.Context, command, rootPath string, f *fileRef, con
 	return cmd
 }
 
-func itoaPtrIfNotZero(n int) *string {
+func itoaPtrIfNotZero(n int) *int {
 	if n == 0 {
 		return nil
 	}
-	s := strconv.Itoa(n)
-	return &s
+	return &n
 }
 
 func boolOrDefault(b *bool, def bool) bool {

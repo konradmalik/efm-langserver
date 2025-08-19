@@ -120,7 +120,7 @@ const (
 type Diagnostic struct {
 	Range              Range                          `json:"range"`
 	Severity           DiagnosticSeverity             `json:"severity,omitempty"`
-	Code               *string                        `json:"code,omitempty"`
+	Code               *int                           `json:"code,omitempty"`
 	Source             *string                        `json:"source,omitempty"`
 	Message            string                         `json:"message"`
 	RelatedInformation []DiagnosticRelatedInformation `json:"relatedInformation,omitempty"`
