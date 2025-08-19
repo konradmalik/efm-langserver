@@ -244,24 +244,37 @@ func isEntryForRequestedURI(rootPath string, uri types.DocumentURI, entry *error
 }
 
 func parseEfmEntryToDiagnostic(entry *errorformat.Entry, config *types.Language, f *fileRef) types.Diagnostic {
-	linePos := max(entry.Lnum-1-config.LintOffset, 0)
-	colPos := max(entry.Col-1, 0)
+	// vast majority of linters report 1-based lines and columns, but lsp requires 0-based
+	// BUG: LintOffset should be added, not subtracted. But to keep backwards compatibility let's leave this bug here
+	lineStart := max(entry.Lnum-1-config.LintOffset, 0)
+	lineEnd := lineStart
+	if entry.EndLnum != 0 {
+		lineEnd = max(entry.EndLnum-1-config.LintOffset, 0)
+	}
+
+	colStart := max(entry.Col-1, 0)
+	colEnd := colStart
 
 	// entry.Col is expected to be one based
 	// if the linter reports 0 it means the whole line
-	word := ""
 	if entry.Col != 0 {
-		// have the ability to add an offset here.
 		// We only add the offset if the linter reports entry.Col > 0 because 0 means the whole line
-		colPos = colPos + config.LintOffsetColumns
-		word = f.wordAt(types.Position{Line: linePos, Character: colPos})
+		colStart = colStart + config.LintOffsetColumns
+
+		if entry.EndCol != 0 {
+			colEnd = max(entry.EndCol-1, 0)
+			colEnd = colEnd + config.LintOffsetColumns
+		} else {
+			word := f.wordAt(types.Position{Line: lineStart, Character: colStart})
+			// len(runes) counts unicode code points, not bytes, which is what we want here
+			colEnd = colStart + len([]rune(word))
+		}
 	}
 
 	return types.Diagnostic{
 		Range: types.Range{
-			Start: types.Position{Line: linePos, Character: colPos},
-			// len(runes) counts unicode code points, not bytes, which is what we want here
-			End: types.Position{Line: linePos, Character: colPos + len([]rune(word))},
+			Start: types.Position{Line: lineStart, Character: colStart},
+			End:   types.Position{Line: lineEnd, Character: colEnd},
 		},
 		Code:     itoaPtrIfNotZero(entry.Nr),
 		Message:  getLintMessagePrefix(config) + entry.Text,

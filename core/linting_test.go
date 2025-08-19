@@ -812,6 +812,51 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "multiline is handled",
+			entry: &errorformat.Entry{
+				Lnum:    1,
+				EndLnum: 3,
+				Col:     0,
+				Text:    "bad",
+				Type:    'E',
+			},
+			cfg: &types.Language{
+				LintOffset:        -2,
+				LintOffsetColumns: 0,
+			},
+			expected: types.Diagnostic{
+				Message:  "bad",
+				Severity: types.Error,
+				Range: types.Range{
+					Start: types.Position{Line: 2, Character: 0},
+					End:   types.Position{Line: 4, Character: 0},
+				},
+			},
+		},
+		{
+			name: "multicol is handled",
+			entry: &errorformat.Entry{
+				Lnum:    2,
+				EndLnum: 2,
+				Col:     3,
+				EndCol:  7,
+				Text:    "bad",
+				Type:    'E',
+			},
+			cfg: &types.Language{
+				LintOffset:        0,
+				LintOffsetColumns: 2,
+			},
+			expected: types.Diagnostic{
+				Message:  "bad",
+				Severity: types.Error,
+				Range: types.Range{
+					Start: types.Position{Line: 1, Character: 4},
+					End:   types.Position{Line: 1, Character: 8},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
