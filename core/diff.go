@@ -12,7 +12,7 @@ func ComputeEdits(name types.DocumentURI, before, after string) ([]types.TextEdi
 		return nil, err
 	}
 
-	var result []types.TextEdit
+	result := make([]types.TextEdit, 0)
 	for _, h := range d.Hunks {
 		startLine := h.FromLine - 1
 		endLine := startLine

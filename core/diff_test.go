@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/konradmalik/efm-langserver/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestComputeEdits(t *testing.T) {
@@ -239,32 +240,14 @@ func TestComputeEdits(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			uri := types.DocumentURI("file:///test.txt")
 			actual, err := ComputeEdits(uri, tt.before, tt.after)
-			if err != nil {
-				t.Fatalf("[%s] unexpected error: %v", tt.name, err)
-			}
+			assert.NoError(t, err)
 
 			// Validate expected exact match if provided
-			if tt.expected != nil {
-				if len(actual) != len(tt.expected) {
-					t.Fatalf("[%s] Expected %d edits, got %d", tt.name, len(tt.expected), len(actual))
-				}
-				for i, edit := range actual {
-					expected := tt.expected[i]
-					if edit.Range != expected.Range {
-						t.Errorf("[%s] Edit %d: expected range %+v, got %+v", tt.name, i, expected.Range, edit.Range)
-					}
-					if edit.NewText != expected.NewText {
-						t.Errorf("[%s] Edit %d: expected NewText %q, got %q", tt.name, i, expected.NewText, edit.NewText)
-					}
-				}
-			}
+			assert.Equal(t, tt.expected, actual)
 
 			// Validate correctness by applying edits
 			afterApplied := applyEdits(tt.before, actual)
-			if afterApplied != tt.after {
-				t.Errorf("[%s] Applying edits did not yield expected text.\nExpected:\n%q\nGot:\n%q",
-					tt.name, tt.after, afterApplied)
-			}
+			assert.Equal(t, tt.after, afterApplied)
 
 			// Validate that edits are sorted and non-overlapping
 			for i := 1; i < len(actual); i++ {
@@ -294,7 +277,7 @@ func TestComputeEdits_LargeInput(t *testing.T) {
 	after := ""
 
 	// Create 1000 lines
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		if i%2 == 0 {
 			before += "line" + string(rune('0'+i%10)) + "\n"
 			after += "line" + string(rune('0'+i%10)) + "\n"
@@ -306,15 +289,10 @@ func TestComputeEdits_LargeInput(t *testing.T) {
 
 	uri := types.DocumentURI("file:///large.txt")
 	edits, err := ComputeEdits(uri, before, after)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	assert.NoError(t, err)
 
-	// Apply edits and compare
 	afterApplied := applyEdits(before, edits)
-	if afterApplied != after {
-		t.Errorf("Large input edits did not yield expected result")
-	}
+	assert.Equal(t, after, afterApplied)
 }
 
 func TestComputeEdits_ComplexScenario(t *testing.T) {
@@ -346,15 +324,10 @@ func main() {
 
 	uri := types.DocumentURI("file:///main.go")
 	edits, err := ComputeEdits(uri, before, after)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	assert.NoError(t, err)
 
-	// Apply and check correctness
 	afterApplied := applyEdits(before, edits)
-	if afterApplied != after {
-		t.Errorf("Complex scenario edits did not yield expected result.\nExpected:\n%s\nGot:\n%s", after, afterApplied)
-	}
+	assert.Equal(t, after, afterApplied)
 }
 
 // applyEdits applies LSP-style text edits to the given text.
