@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -15,7 +16,11 @@ func TestNormalizedFilenameFromURI(t *testing.T) {
 	uri := types.DocumentURI("file:///tmp/TestFile.txt")
 	fname, err := normalizedFilenameFromUri(uri)
 	assert.NoError(t, err)
-	assert.Equal(t, "/tmp/TestFile.txt", fname)
+	if runtime.GOOS == "windows" {
+		assert.Equal(t, "/tmp/testfile.txt", fname)
+	} else {
+		assert.Equal(t, "/tmp/TestFile.txt", fname)
+	}
 }
 
 func TestApplyOptionsPlaceholders_DefaultTypes(t *testing.T) {

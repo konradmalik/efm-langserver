@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -627,7 +628,7 @@ func TestIsEntryForRequestedURI(t *testing.T) {
 			entry: &errorformat.Entry{
 				Filename: "/gpu/nvidia/driver.go",
 			},
-			expected: false,
+			expected: runtime.GOOS == "windows",
 		},
 		{
 			name: "empty filename is accepted",
@@ -645,7 +646,7 @@ func TestIsEntryForRequestedURI(t *testing.T) {
 			entry: &errorformat.Entry{
 				Filename: "Main.go",
 			},
-			expected: false,
+			expected: runtime.GOOS == "windows",
 		},
 	}
 
