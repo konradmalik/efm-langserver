@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"time"
 
@@ -236,11 +235,7 @@ func isEntryForRequestedURI(rootPath string, uri types.DocumentURI, entry *error
 	} else {
 		diagURI = toURI(filepath.Join(rootPath, entry.Filename))
 	}
-	// windows FS is case insensitive
-	if runtime.GOOS == "windows" {
-		return strings.EqualFold(string(diagURI), string(uri))
-	}
-	return diagURI == uri
+	return comparePaths(string(diagURI), string(uri))
 }
 
 func parseEfmEntryToDiagnostic(entry *errorformat.Entry, config *types.Language, f *fileRef) types.Diagnostic {
