@@ -2,6 +2,7 @@ package core
 
 import (
 	"testing"
+	"unicode/utf16"
 
 	"github.com/konradmalik/efm-langserver/types"
 	"github.com/stretchr/testify/assert"
@@ -39,9 +40,8 @@ func TestWordAt(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		f := fileRef{LanguageID: "txt", Text: tt.text, Version: 0}
 		t.Run(tt.name, func(t *testing.T) {
-			got := f.wordAt(tt.pos)
+			got := string(utf16.Decode(WordAtUtf16(tt.text, tt.pos)))
 			assert.Equal(t, tt.expected, got)
 		})
 	}

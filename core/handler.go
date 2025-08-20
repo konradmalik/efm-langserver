@@ -10,9 +10,6 @@ import (
 	"sync"
 	"time"
 	"unicode"
-	"unicode/utf16"
-
-	"github.com/mattn/go-unicodeclass"
 
 	"github.com/konradmalik/efm-langserver/types"
 )
@@ -185,39 +182,6 @@ func (h *LangHandler) findRootPath(fname string, lang types.Language) string {
 	}
 
 	return h.RootPath
-}
-
-func (f *fileRef) wordAt(pos types.Position) string {
-	lines := strings.Split(f.Text, "\n")
-	if pos.Line < 0 || pos.Line >= len(lines) {
-		return ""
-	}
-	chars := utf16.Encode([]rune(lines[pos.Line]))
-	if pos.Character < 0 || pos.Character > len(chars) {
-		return ""
-	}
-	prevPos := 0
-	currPos := -1
-	prevCls := unicodeclass.Invalid
-	for i, char := range chars {
-		if char == '_' {
-			continue
-		}
-		currCls := unicodeclass.Is(rune(char))
-		if currCls != prevCls {
-			if i <= pos.Character {
-				prevPos = i
-			} else {
-				currPos = i
-				break
-			}
-		}
-		prevCls = currCls
-	}
-	if currPos == -1 {
-		currPos = len(chars)
-	}
-	return string(utf16.Decode(chars[prevPos:currPos]))
 }
 
 func isWindowsDrivePath(path string) bool {

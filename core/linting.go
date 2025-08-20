@@ -265,9 +265,8 @@ func parseEfmEntryToDiagnostic(entry *errorformat.Entry, config *types.Language,
 			colEnd = max(entry.EndCol-1, 0)
 			colEnd = colEnd + config.LintOffsetColumns
 		} else {
-			word := f.wordAt(types.Position{Line: lineStart, Character: colStart})
-			// len(runes) counts unicode code points, not bytes, which is what we want here
-			colEnd = colStart + len([]rune(word))
+			word := WordAtUtf16(f.Text, types.Position{Line: lineStart, Character: colStart})
+			colEnd = colStart + len(word)
 		}
 	}
 
