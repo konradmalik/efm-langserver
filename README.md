@@ -129,7 +129,9 @@ type Language struct {
 	Prefix             string             `json:"prefix,omitempty"`
 	LintFormats        []string           `json:"lintFormats,omitempty"`
 	LintStdin          bool               `json:"lintStdin,omitempty"`
+	// warning: this will be subtracted from the line reported by the linter
 	LintOffset         int                `json:"lintOffset,omitempty"`
+ 	// warning: this will be added to the column reported by the linter
 	LintOffsetColumns  int                `json:"lintOffsetColumns,omitempty"`
 	LintCommand        string             `json:"lintCommand,omitempty"`
 	LintIgnoreExitCode bool               `json:"lintIgnoreExitCode,omitempty"`
