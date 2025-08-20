@@ -34,6 +34,16 @@ $(GOBIN)/goxz:
 test: build
 	go test -v ./...
 
+.PHONY: lint
+lint:
+	go mod tidy
+	go mod vendor
+	golangci-lint run ./...
+
+.PHONY: fmt
+fmt:
+	go fmt ./...
+
 schema.md: schema.json
 	# https://github.com/coveooss/json-schema-for-humans
 	generate-schema-doc --config template_name=md --config description_is_markdown=true --config show_breadcrumbs=false schema.json schema.md

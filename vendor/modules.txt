@@ -5,8 +5,6 @@ github.com/aymanbagabas/go-udiff/lcs
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
-# github.com/mattn/go-unicodeclass v0.0.2
-## explicit
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
