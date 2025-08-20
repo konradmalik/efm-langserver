@@ -62,7 +62,7 @@ func TestApplyRangePlaceholders(t *testing.T) {
 	assert.Contains(t, out, "--flag=4")
 }
 
-func TestBuildCommand_HandlesPlaxceholders(t *testing.T) {
+func TestBuildCommand_HandlesPlaceholders(t *testing.T) {
 	cfg := types.Language{FormatCommand: "echo ${flag:opt} ${anotherflag:tpo}"}
 	opts := types.FormattingOptions{"opt": "value"}
 	f := fileRef{Text: "text", LanguageID: "go", NormalizedFilename: "file.txt"}
@@ -140,10 +140,6 @@ func TestRangeFormatting_RequireRootMatcher(t *testing.T) {
 	}
 
 	d, err := h.Formatting(uri, nil, types.FormattingOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 0 {
-		t.Fatal("text edits should be zero as we have no root marker for the language but require one", d)
-	}
+	assert.NoError(t, err)
+	assert.Empty(t, d)
 }

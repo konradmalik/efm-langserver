@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/konradmalik/efm-langserver/types"
@@ -70,21 +69,11 @@ func TestLintFileMatched(t *testing.T) {
 	assert.NoError(t, err)
 
 	d := uriToDiag[uri]
-	if len(d) != 1 {
-		t.Fatal("diagnostics should be only one", d)
-	}
-	if d[0].Range.Start.Line != 1 {
-		t.Fatalf("range.start.line should be %v but got: %v", 1, d[0].Range.Start.Line)
-	}
-	if d[0].Range.Start.Character != 0 {
-		t.Fatalf("range.start.character should be %v but got: %v", 0, d[0].Range.Start.Character)
-	}
-	if d[0].Severity != 1 {
-		t.Fatalf("severity should be %v but got: %v", 0, d[0].Severity)
-	}
-	if strings.TrimSpace(d[0].Message) != "No it is normal!" {
-		t.Fatalf("message should be %q but got: %q", "No it is normal!", strings.TrimSpace(d[0].Message))
-	}
+	assert.Len(t, d, 1)
+	assert.Equal(t, d[0].Range.Start.Line, 1)
+	assert.Equal(t, d[0].Range.Start.Character, 0)
+	assert.Equal(t, d[0].Severity, types.DiagnosticSeverity(1))
+	assert.Equal(t, d[0].Message, "No it is normal!")
 }
 
 func TestLintFileMatchedWildcard(t *testing.T) {
@@ -117,21 +106,11 @@ func TestLintFileMatchedWildcard(t *testing.T) {
 	assert.NoError(t, err)
 
 	d := uriToDiag[uri]
-	if len(d) != 1 {
-		t.Fatal("diagnostics should be only one")
-	}
-	if d[0].Range.Start.Line != 1 {
-		t.Fatalf("range.start.line should be %v but got: %v", 1, d[0].Range.Start.Line)
-	}
-	if d[0].Range.Start.Character != 0 {
-		t.Fatalf("range.start.character should be %v but got: %v", 0, d[0].Range.Start.Character)
-	}
-	if d[0].Severity != 1 {
-		t.Fatalf("severity should be %v but got: %v", 0, d[0].Severity)
-	}
-	if strings.TrimSpace(d[0].Message) != "No it is normal!" {
-		t.Fatalf("message should be %q but got: %q", "No it is normal!", strings.TrimSpace(d[0].Message))
-	}
+	assert.Len(t, d, 1)
+	assert.Equal(t, d[0].Range.Start.Line, 1)
+	assert.Equal(t, d[0].Range.Start.Character, 0)
+	assert.Equal(t, d[0].Severity, types.DiagnosticSeverity(1))
+	assert.Equal(t, d[0].Message, "No it is normal!")
 }
 
 // column 0 remains unchanged, regardless of the configured offset
@@ -165,16 +144,11 @@ func TestLintOffsetColumnsZero(t *testing.T) {
 	}
 
 	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	assert.NoError(t, err)
+
 	d := uriToDiag[uri]
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 1 {
-		t.Fatal("diagnostics should be only one")
-	}
-	if d[0].Range.Start.Character != 0 {
-		t.Fatalf("range.start.character should be %v but got: %v", 0, d[0].Range.Start.Character)
-	}
+	assert.Len(t, d, 1)
+	assert.Equal(t, d[0].Range.Start.Character, 0)
 }
 
 // without column offset, 1-based columns are assumed, which means that we should get 0 for column 1
@@ -207,16 +181,11 @@ func TestLintOffsetColumnsNoOffset(t *testing.T) {
 	}
 
 	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	assert.NoError(t, err)
+
 	d := uriToDiag[uri]
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 1 {
-		t.Fatal("diagnostics should be only one")
-	}
-	if d[0].Range.Start.Character != 0 {
-		t.Fatalf("range.start.character should be %v but got: %v", 0, d[0].Range.Start.Character)
-	}
+	assert.Len(t, d, 1)
+	assert.Equal(t, d[0].Range.Start.Character, 0)
 }
 
 // for column 1 with offset we should get column 1 back
@@ -250,16 +219,11 @@ func TestLintOffsetColumnsNonZero(t *testing.T) {
 	}
 
 	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	assert.NoError(t, err)
+
 	d := uriToDiag[uri]
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 1 {
-		t.Fatal("diagnostics should be only one")
-	}
-	if d[0].Range.Start.Character != 1 {
-		t.Fatalf("range.start.character should be %v but got: %v", 1, d[0].Range.Start.Character)
-	}
+	assert.Len(t, d, 1)
+	assert.Equal(t, d[0].Range.Start.Character, 1)
 }
 
 func TestLintCategoryMap(t *testing.T) {
@@ -296,16 +260,11 @@ func TestLintCategoryMap(t *testing.T) {
 	}
 
 	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	assert.NoError(t, err)
+
 	d := uriToDiag[uri]
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 1 {
-		t.Fatal("diagnostics should be only one")
-	}
-	if d[0].Severity != 3 {
-		t.Fatalf("Severity should be %v but is: %v", 3, d[0].Severity)
-	}
+	assert.Len(t, d, 1)
+	assert.Equal(t, d[0].Severity, types.DiagnosticSeverity(3))
 }
 
 // Test if lint is executed if required root markers for the language are missing
@@ -337,13 +296,10 @@ func TestLintRequireRootMarker(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 0 {
-		t.Fatal("diagnostics should be zero as we have no root marker for the language but require one", d)
-	}
+	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	assert.NoError(t, err)
+
+	assert.Empty(t, uriToDiag)
 }
 
 func TestLintSingleEntry(t *testing.T) {
@@ -379,19 +335,14 @@ func TestLintSingleEntry(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 1 {
-		t.Fatalf("diagnostics should be one, but got %#v", d)
-	}
-	if d[uri][0].Range.Start.Character != 0 {
-		t.Fatalf("first range.start.character should be %v but got: %v", 0, d[uri][0].Range.Start.Character)
-	}
-	if d[uri][0].Range.Start.Line != 1 {
-		t.Fatalf("first range.start.line should be %v but got: %v", 1, d[uri][0].Range.Start.Line)
-	}
+	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	assert.NoError(t, err)
+	assert.Len(t, uriToDiag, 1)
+
+	d := uriToDiag[uri]
+	assert.Len(t, d, 1)
+	assert.Equal(t, d[0].Range.Start.Line, 1)
+	assert.Equal(t, d[0].Range.Start.Character, 0)
 }
 
 func TestLintMultipleEntries(t *testing.T) {
@@ -427,20 +378,16 @@ func TestLintMultipleEntries(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri2, types.EventTypeChange)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(d) != 1 {
-		t.Fatalf("diagnostics should be for one file, but got %#v", d)
-	}
-	if len(d[uri2]) != 2 {
-		t.Fatalf("should have two diagnostics, but got %#v", d[uri2])
-	}
-	assert.Equal(t, 2, d[uri2][0].Range.Start.Character)
-	assert.Equal(t, 1, d[uri2][0].Range.Start.Line)
-	assert.Equal(t, 0, d[uri2][1].Range.Start.Character)
-	assert.Equal(t, 0, d[uri2][1].Range.Start.Line)
+	uriToDiag, err := h.lintDocument(context.Background(), nil, uri2, types.EventTypeChange)
+	assert.NoError(t, err)
+	assert.Len(t, uriToDiag, 1)
+
+	d := uriToDiag[uri2]
+	assert.Len(t, d, 2)
+	assert.Equal(t, d[0].Range.Start.Line, 1)
+	assert.Equal(t, d[0].Range.Start.Character, 2)
+	assert.Equal(t, d[1].Range.Start.Line, 0)
+	assert.Equal(t, d[1].Range.Start.Character, 0)
 }
 
 func TestLintNoDiagnostics(t *testing.T) {
@@ -470,16 +417,11 @@ func TestLintNoDiagnostics(t *testing.T) {
 	}
 
 	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
-	if err != nil {
-		t.Fatal(err)
-	}
-	d, ok := uriToDiag[uri]
-	if !ok {
-		t.Fatal("didn't get any diagnostics")
-	}
-	if len(d) != 0 {
-		t.Fatal("diagnostics should be an empty list", d)
-	}
+	assert.NoError(t, err)
+	assert.Len(t, uriToDiag, 1)
+
+	d := uriToDiag[uri]
+	assert.Empty(t, d)
 }
 
 func TestLintEventTypes(t *testing.T) {
@@ -560,9 +502,7 @@ func TestLintEventTypes(t *testing.T) {
 			h.configs["vim"][0].LintOnChange = boolPtr(tt.lintOnChange)
 			h.configs["vim"][0].LintOnSave = boolPtr(tt.lintOnSave)
 			uriToDiag, err := h.lintDocument(context.Background(), nil, uri, tt.event)
-			if err != nil {
-				t.Fatal(err)
-			}
+			assert.NoError(t, err)
 
 			d := uriToDiag[uri]
 			assert.Equal(t, tt.expectMessages, len(d))
@@ -588,9 +528,7 @@ func TestGetSeverity(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getSeverity(tt.typ, tt.categoryMap, tt.defaultSeverity)
-			if got != tt.want {
-				t.Errorf("got %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
