@@ -1,6 +1,10 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
   test:
@@ -23,3 +27,12 @@ jobs:
           args: --verbose
       - name: Test
         run: make test
+  nix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v30
+      - name: Flake checks
+        run: nix flake check
+      - name: Nix build
+        run: nix build
