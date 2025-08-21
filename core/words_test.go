@@ -32,6 +32,9 @@ func TestWordAt(t *testing.T) {
 		{"empty string", "", types.Position{Line: 0, Character: 0}, ""},
 		{"only punctuation", "!!!", types.Position{Line: 0, Character: 1}, "!!!"},
 		{"unicode combining marks", "e\u0301clair", types.Position{Line: 0, Character: 0}, "e\u0301clair"},
+		{"method call", "someobject.somemethod(arg1,arg2)", types.Position{Line: 0, Character: 12}, "somemethod"},
+		{"function def", "func(arg1 string, arg2 int)", types.Position{Line: 0, Character: 1}, "func"},
+		{"function def", "func(arg1 string, arg2 int)", types.Position{Line: 0, Character: 7}, "arg1"},
 
 		// multi-line tests
 		{"start of second line", "hello\nworld", types.Position{Line: 1, Character: 0}, "world"},
