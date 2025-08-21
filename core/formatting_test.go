@@ -115,7 +115,7 @@ func TestRangeFormatting_Success(t *testing.T) {
 func TestRangeFormatting_RequireRootMatcher(t *testing.T) {
 	base, _ := os.Getwd()
 	filepath := filepath.Join(base, "foo")
-	uri := toURI(filepath)
+	uri := ParseLocalFileToURI(filepath)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),

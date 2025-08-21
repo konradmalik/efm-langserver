@@ -231,9 +231,9 @@ func isEntryForRequestedURI(rootPath string, uri types.DocumentURI, entry *error
 	// if entry.Filename is not empty, we need to check if this entry is indeed for this uri
 	var diagURI types.DocumentURI
 	if filepath.IsAbs(entry.Filename) {
-		diagURI = toURI(entry.Filename)
+		diagURI = ParseLocalFileToURI(entry.Filename)
 	} else {
-		diagURI = toURI(filepath.Join(rootPath, entry.Filename))
+		diagURI = ParseLocalFileToURI(filepath.Join(rootPath, entry.Filename))
 	}
 	return comparePaths(string(diagURI), string(uri))
 }

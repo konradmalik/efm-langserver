@@ -18,7 +18,7 @@ const (
 )
 
 func normalizedFilenameFromUri(uri types.DocumentURI) (string, error) {
-	fname, err := fromURI(uri)
+	fname, err := PathFromURI(uri)
 	if err != nil {
 		return "", fmt.Errorf("invalid uri: %v: %v", err, uri)
 	}

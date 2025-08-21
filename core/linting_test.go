@@ -42,7 +42,7 @@ func TestLintNoFileMatched(t *testing.T) {
 func TestLintFileMatched(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
-	uri := toURI(file)
+	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
@@ -79,7 +79,7 @@ func TestLintFileMatched(t *testing.T) {
 func TestLintFileMatchedWildcard(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
-	uri := toURI(file)
+	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
@@ -118,7 +118,7 @@ func TestLintFileMatchedWildcard(t *testing.T) {
 func TestLintOffsetColumnsZero(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
-	uri := toURI(file)
+	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
@@ -156,7 +156,7 @@ func TestLintOffsetColumnsZero(t *testing.T) {
 func TestLintOffsetColumnsNoOffset(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
-	uri := toURI(file)
+	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
@@ -193,7 +193,7 @@ func TestLintOffsetColumnsNoOffset(t *testing.T) {
 func TestLintOffsetColumnsNonZero(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
-	uri := toURI(file)
+	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
@@ -229,7 +229,7 @@ func TestLintOffsetColumnsNonZero(t *testing.T) {
 func TestLintCategoryMap(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
-	uri := toURI(file)
+	uri := ParseLocalFileToURI(file)
 
 	mapping := make(map[string]string)
 	mapping["R"] = "I" // pylint refactoring to info
@@ -271,7 +271,7 @@ func TestLintCategoryMap(t *testing.T) {
 func TestLintRequireRootMarker(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
-	uri := toURI(file)
+	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
@@ -306,8 +306,8 @@ func TestLintSingleEntry(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
 	file2 := filepath.Join(base, "bar")
-	uri := toURI(file)
-	uri2 := toURI(file2)
+	uri := ParseLocalFileToURI(file)
+	uri2 := ParseLocalFileToURI(file2)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
@@ -349,8 +349,8 @@ func TestLintMultipleEntries(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
 	file2 := filepath.Join(base, "bar")
-	uri := toURI(file)
-	uri2 := toURI(file2)
+	uri := ParseLocalFileToURI(file)
+	uri2 := ParseLocalFileToURI(file2)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
@@ -393,7 +393,7 @@ func TestLintMultipleEntries(t *testing.T) {
 func TestLintNoDiagnostics(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
-	uri := toURI(file)
+	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
@@ -427,7 +427,7 @@ func TestLintNoDiagnostics(t *testing.T) {
 func TestLintEventTypes(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
-	uri := toURI(file)
+	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
 		logger:   log.New(log.Writer(), "", log.LstdFlags),

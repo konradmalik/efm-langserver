@@ -3,13 +3,11 @@ package core
 import (
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
-	"unicode"
 
 	"github.com/konradmalik/efm-langserver/types"
 )
@@ -63,7 +61,7 @@ func NewHandler(logger *log.Logger, config *types.Config) *LangHandler {
 
 func (h *LangHandler) Initialize(params types.InitializeParams) (types.InitializeResult, error) {
 	if params.RootURI != "" {
-		rootPath, err := fromURI(params.RootURI)
+		rootPath, err := PathFromURI(params.RootURI)
 		if err != nil {
 			return types.InitializeResult{}, err
 		}
@@ -182,44 +180,6 @@ func (h *LangHandler) findRootPath(fname string, lang types.Language) string {
 	}
 
 	return h.RootPath
-}
-
-func isWindowsDrivePath(path string) bool {
-	if len(path) < 4 {
-		return false
-	}
-	return unicode.IsLetter(rune(path[0])) && path[1] == ':'
-}
-
-func isWindowsDriveURI(uri string) bool {
-	if len(uri) < 4 {
-		return false
-	}
-	return uri[0] == '/' && unicode.IsLetter(rune(uri[1])) && uri[2] == ':'
-}
-
-func fromURI(uri types.DocumentURI) (string, error) {
-	u, err := url.ParseRequestURI(string(uri))
-	if err != nil {
-		return "", err
-	}
-	if u.Scheme != "file" {
-		return "", fmt.Errorf("only file URIs are supported, got %v", u.Scheme)
-	}
-	if isWindowsDriveURI(u.Path) {
-		u.Path = u.Path[1:]
-	}
-	return u.Path, nil
-}
-
-func toURI(path string) types.DocumentURI {
-	if isWindowsDrivePath(path) {
-		path = "/" + path
-	}
-	return types.DocumentURI((&url.URL{
-		Scheme: "file",
-		Path:   filepath.ToSlash(path),
-	}).String())
 }
 
 func matchRootPath(fname string, markers []string) string {
