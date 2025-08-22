@@ -3,35 +3,6 @@
   "additionalProperties": false,
   "description": "If configuring via `DidChangeConfiguration` (e.g. an editor API such as `nvim-lspconfig`), all properties should be in camelCase instead of kebab-case.",
   "definitions": {
-    "command-definition": {
-      "description": "list of commands",
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "arguments": {
-            "description": "arguments for the command",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "command": {
-            "description": "command to execute",
-            "type": "string"
-          },
-          "os": {
-            "description": "command executable OS environment",
-            "type": "string"
-          },
-          "title": {
-            "description": "title for clients",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "type": "array"
-    },
     "tool-definition": {
       "additionalProperties": false,
       "description": "definition of the tool",
@@ -65,7 +36,7 @@
           "type": "string"
         },
         "lint-offset-columns": {
-          "description": "offset value to skip columns",
+          "description": "offset value to skip columns (will be added)",
           "type": "number"
         },
         "lint-category-map": {
@@ -85,16 +56,20 @@
           "type": "boolean"
         },
         "lint-offset": {
-          "description": "offset value to skip lines",
+          "description": "offset value to skip lines (will be subtracted)",
           "type": "number"
         },
         "lint-after-open": {
           "default": true,
-          "description": "lint after open",
+          "description": "lint after open (defaults to true)",
           "type": "boolean"
         },
         "lint-on-save": {
-          "description": "only lint on save, i.e. don't lint on text changed",
+          "description": "lint on save (defaults to true)",
+          "type": "boolean"
+        },
+        "lint-on-change": {
+          "description": "lint on change (defaults to true)",
           "type": "boolean"
         },
         "lint-severity": {
@@ -110,10 +85,6 @@
           "description": "use stdin for the lint",
           "type": "boolean"
         },
-        "lint-workspace": {
-          "description": "indicates that the command lints the whole workspace and thus doesn't need a filename argument nor stdin",
-          "type": "boolean"
-        },
         "root-markers": {
           "description": "markers to find root directory",
           "items": {
@@ -124,9 +95,6 @@
         "require-marker": {
           "description": "require a marker to run linter",
           "type": "boolean"
-        },
-        "commands": {
-          "$ref": "#/definitions/command-definition"
         }
       },
       "type": "object"
@@ -156,20 +124,12 @@
       },
       "type": "object"
     },
-    "version": {
-      "description": "version of this yaml format",
-      "type": "number"
-    },
     "root-markers": {
       "description": "markers to find root directory",
       "items": {
         "type": "string"
       },
       "type": "array"
-    },
-    "log-file": {
-      "description": "(YAML only) path to log file",
-      "type": "string"
     },
     "log-level": {
       "description": "log level",

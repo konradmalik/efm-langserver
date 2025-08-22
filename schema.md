@@ -1,12 +1,6 @@
 # efm-langserver
 
 - [1. Property `commands`](#commands)
-  - [1.1. commands items](#commands_items)
-    - [1.1.1. Property `arguments`](#commands_items_arguments)
-      - [1.1.1.1. arguments items](#commands_items_arguments_items)
-    - [1.1.2. Property `command`](#commands_items_command)
-    - [1.1.3. Property `os`](#commands_items_os)
-    - [1.1.4. Property `title`](#commands_items_title)
 - [2. Property `languages`](#languages)
   - [2.1. Pattern Property `^([a-z0-9_-]+)+$`](#languages_pattern1)
     - [2.1.1. tool-definition](#languages_pattern1_items)
@@ -25,23 +19,20 @@
       - [2.1.1.11. Property `lint-offset`](#languages_pattern1_items_lint-offset)
       - [2.1.1.12. Property `lint-after-open`](#languages_pattern1_items_lint-after-open)
       - [2.1.1.13. Property `lint-on-save`](#languages_pattern1_items_lint-on-save)
-      - [2.1.1.14. Property `lint-severity`](#languages_pattern1_items_lint-severity)
-      - [2.1.1.15. Property `lint-source`](#languages_pattern1_items_lint-source)
-      - [2.1.1.16. Property `lint-stdin`](#languages_pattern1_items_lint-stdin)
-      - [2.1.1.17. Property `lint-workspace`](#languages_pattern1_items_lint-workspace)
+      - [2.1.1.14. Property `lint-on-change`](#languages_pattern1_items_lint-on-change)
+      - [2.1.1.15. Property `lint-severity`](#languages_pattern1_items_lint-severity)
+      - [2.1.1.16. Property `lint-source`](#languages_pattern1_items_lint-source)
+      - [2.1.1.17. Property `lint-stdin`](#languages_pattern1_items_lint-stdin)
       - [2.1.1.18. Property `root-markers`](#languages_pattern1_items_root-markers)
         - [2.1.1.18.1. root-markers items](#languages_pattern1_items_root-markers_items)
       - [2.1.1.19. Property `require-marker`](#languages_pattern1_items_require-marker)
-      - [2.1.1.20. Property `commands`](#languages_pattern1_items_commands)
 - [3. Property `tools`](#tools)
   - [3.1. Pattern Property `tool-definition`](#tools_pattern1)
-- [4. Property `version`](#version)
-- [5. Property `root-markers`](#root-markers)
-  - [5.1. root-markers items](#root-markers_items)
-- [6. Property `log-file`](#log-file)
-- [7. Property `log-level`](#log-level)
-- [8. Property `format-debounce`](#format-debounce)
-- [9. Property `lint-debounce`](#lint-debounce)
+- [4. Property `root-markers`](#root-markers)
+  - [4.1. root-markers items](#root-markers_items)
+- [5. Property `log-level`](#log-level)
+- [6. Property `format-debounce`](#format-debounce)
+- [7. Property `lint-debounce`](#lint-debounce)
 
 **Title:** efm-langserver
 
@@ -55,107 +46,22 @@
 
 | Property                               | Pattern | Type            | Deprecated | Definition                          | Title/Description                                               |
 | -------------------------------------- | ------- | --------------- | ---------- | ----------------------------------- | --------------------------------------------------------------- |
-| - [commands](#commands )               | No      | array of object | No         | In #/definitions/command-definition | list of commands                                                |
+| - [commands](#commands )               | No      | object          | No         | In #/definitions/command-definition | -                                                               |
 | - [languages](#languages )             | No      | object          | No         | -                                   | list of language                                                |
 | - [tools](#tools )                     | No      | object          | No         | -                                   | definition of tools                                             |
-| - [version](#version )                 | No      | number          | No         | -                                   | version of this yaml format                                     |
 | - [root-markers](#root-markers )       | No      | array of string | No         | -                                   | markers to find root directory                                  |
-| - [log-file](#log-file )               | No      | string          | No         | -                                   | (YAML only) path to log file                                    |
 | - [log-level](#log-level )             | No      | number          | No         | -                                   | log level                                                       |
 | - [format-debounce](#format-debounce ) | No      | string          | No         | -                                   | duration to debounce calls to the formatter executable. e.g: 1s |
 | - [lint-debounce](#lint-debounce )     | No      | string          | No         | -                                   | duration to debounce calls to the linter executable. e.g.: 1s   |
 
 ## <a name="commands"></a>1. Property `commands`
 
-|                |                                  |
-| -------------- | -------------------------------- |
-| **Type**       | `array of object`                |
-| **Required**   | No                               |
-| **Defined in** | #/definitions/command-definition |
-
-**Description:** list of commands
-
-|                      | Array restrictions |
-| -------------------- | ------------------ |
-| **Min items**        | N/A                |
-| **Max items**        | N/A                |
-| **Items unicity**    | False              |
-| **Additional items** | False              |
-| **Tuple validation** | See below          |
-
-| Each item of this array must be   | Description |
-| --------------------------------- | ----------- |
-| [commands items](#commands_items) | -           |
-
-### <a name="commands_items"></a>1.1. commands items
-
-|                           |             |
-| ------------------------- | ----------- |
-| **Type**                  | `object`    |
-| **Required**              | No          |
-| **Additional properties** | Not allowed |
-
-| Property                                  | Pattern | Type            | Deprecated | Definition | Title/Description                 |
-| ----------------------------------------- | ------- | --------------- | ---------- | ---------- | --------------------------------- |
-| - [arguments](#commands_items_arguments ) | No      | array of string | No         | -          | arguments for the command         |
-| - [command](#commands_items_command )     | No      | string          | No         | -          | command to execute                |
-| - [os](#commands_items_os )               | No      | string          | No         | -          | command executable OS environment |
-| - [title](#commands_items_title )         | No      | string          | No         | -          | title for clients                 |
-
-#### <a name="commands_items_arguments"></a>1.1.1. Property `arguments`
-
-|              |                   |
-| ------------ | ----------------- |
-| **Type**     | `array of string` |
-| **Required** | No                |
-
-**Description:** arguments for the command
-
-|                      | Array restrictions |
-| -------------------- | ------------------ |
-| **Min items**        | N/A                |
-| **Max items**        | N/A                |
-| **Items unicity**    | False              |
-| **Additional items** | False              |
-| **Tuple validation** | See below          |
-
-| Each item of this array must be                    | Description |
-| -------------------------------------------------- | ----------- |
-| [arguments items](#commands_items_arguments_items) | -           |
-
-##### <a name="commands_items_arguments_items"></a>1.1.1.1. arguments items
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-#### <a name="commands_items_command"></a>1.1.2. Property `command`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-**Description:** command to execute
-
-#### <a name="commands_items_os"></a>1.1.3. Property `os`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-**Description:** command executable OS environment
-
-#### <a name="commands_items_title"></a>1.1.4. Property `title`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-**Description:** title for clients
+|                           |                                  |
+| ------------------------- | -------------------------------- |
+| **Type**                  | `object`                         |
+| **Required**              | No                               |
+| **Additional properties** | Any type allowed                 |
+| **Defined in**            | #/definitions/command-definition |
 
 ## <a name="languages"></a>2. Property `languages`
 
@@ -204,28 +110,27 @@ must respect the following conditions
 
 **Description:** definition of the tool
 
-| Property                                                                    | Pattern | Type            | Deprecated | Definition                     | Title/Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| --------------------------------------------------------------------------- | ------- | --------------- | ---------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| - [prefix](#languages_pattern1_items_prefix )                               | No      | string          | No         | -                              | If `lint-source` doesn't work, you can set a prefix here instead, which will render the messages as "[prefix] message".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| - [format-can-range](#languages_pattern1_items_format-can-range )           | No      | boolean         | No         | -                              | Whether the formatting command handles range start and range end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| - [format-command](#languages_pattern1_items_format-command )               | No      | string          | No         | -                              | Formatting command. Input filename can be injected using `${INPUT}`, and flags can be injected using `${--flag:key}` (adds `--flag <value>` if value exists for key), `${--flag=key}` (adds `--flag=<value>` if value exists for key), or `${--flag:!key}` (adds `--flag` if value for key is falsy).<br /><br />`efm-langserver` may provide values for keys `charStart`, `charEnd`, `rowStart`, `rowEnd`, `colStart`, `colEnd`, or any key in [`interface FormattingOptions`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#formattingOptions).<br /><br />Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${--use-tabs:insertSpaces} ${--range-start=charStart} ${--range-start=charEnd}` |
-| - [format-stdin](#languages_pattern1_items_format-stdin )                   | No      | boolean         | No         | -                              | use stdin for the format                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| - [env](#languages_pattern1_items_env )                                     | No      | array of string | No         | -                              | command environment variables and values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| - [lint-command](#languages_pattern1_items_lint-command )                   | No      | string          | No         | -                              | Lint command. Input filename can be injected using `${INPUT}`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| - [lint-offset-columns](#languages_pattern1_items_lint-offset-columns )     | No      | number          | No         | -                              | offset value to skip columns                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| - [lint-category-map](#languages_pattern1_items_lint-category-map )         | No      | object          | No         | -                              | Map linter categories to LSP categories                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| - [lint-formats](#languages_pattern1_items_lint-formats )                   | No      | array of string | No         | -                              | List of Vim errorformats to capture. See: https://vimhelp.org/quickfix.txt.html#errorformats. If this is not expressive enough, you can edit the `lint-command` to do some preprocessing, e.g. using `sed` or `jq`.<br /><br />`efm-langserver` uses a Go implementation to parse the errors, which comes with a CLI for quick testing: https://github.com/reviewdog/errorformat                                                                                                                                                                                                                                                                                                                                                                                                                |
-| - [lint-ignore-exit-code](#languages_pattern1_items_lint-ignore-exit-code ) | No      | boolean         | No         | -                              | ignore exit code of lint                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| - [lint-offset](#languages_pattern1_items_lint-offset )                     | No      | number          | No         | -                              | offset value to skip lines                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| - [lint-after-open](#languages_pattern1_items_lint-after-open )             | No      | boolean         | No         | -                              | lint after open                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| - [lint-on-save](#languages_pattern1_items_lint-on-save )                   | No      | boolean         | No         | -                              | only lint on save, i.e. don't lint on text changed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| - [lint-severity](#languages_pattern1_items_lint-severity )                 | No      | number          | No         | -                              | default severity to show if violation doesn't provide severity. 1 = error, 2 = warning, 3 = info, 4 = hint                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| - [lint-source](#languages_pattern1_items_lint-source )                     | No      | string          | No         | -                              | show where the lint came from, e.g. 'eslint'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| - [lint-stdin](#languages_pattern1_items_lint-stdin )                       | No      | boolean         | No         | -                              | use stdin for the lint                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| - [lint-workspace](#languages_pattern1_items_lint-workspace )               | No      | boolean         | No         | -                              | indicates that the command lints the whole workspace and thus doesn't need a filename argument nor stdin                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| - [root-markers](#languages_pattern1_items_root-markers )                   | No      | array of string | No         | -                              | markers to find root directory                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| - [require-marker](#languages_pattern1_items_require-marker )               | No      | boolean         | No         | -                              | require a marker to run linter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| - [commands](#languages_pattern1_items_commands )                           | No      | array of object | No         | Same as [commands](#commands ) | list of commands                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Property                                                                    | Pattern | Type            | Deprecated | Definition | Title/Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------------------------------------------------------- | ------- | --------------- | ---------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| - [prefix](#languages_pattern1_items_prefix )                               | No      | string          | No         | -          | If `lint-source` doesn't work, you can set a prefix here instead, which will render the messages as "[prefix] message".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| - [format-can-range](#languages_pattern1_items_format-can-range )           | No      | boolean         | No         | -          | Whether the formatting command handles range start and range end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| - [format-command](#languages_pattern1_items_format-command )               | No      | string          | No         | -          | Formatting command. Input filename can be injected using `${INPUT}`, and flags can be injected using `${--flag:key}` (adds `--flag <value>` if value exists for key), `${--flag=key}` (adds `--flag=<value>` if value exists for key), or `${--flag:!key}` (adds `--flag` if value for key is falsy).<br /><br />`efm-langserver` may provide values for keys `charStart`, `charEnd`, `rowStart`, `rowEnd`, `colStart`, `colEnd`, or any key in [`interface FormattingOptions`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#formattingOptions).<br /><br />Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${--use-tabs:insertSpaces} ${--range-start=charStart} ${--range-start=charEnd}` |
+| - [format-stdin](#languages_pattern1_items_format-stdin )                   | No      | boolean         | No         | -          | use stdin for the format                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| - [env](#languages_pattern1_items_env )                                     | No      | array of string | No         | -          | command environment variables and values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| - [lint-command](#languages_pattern1_items_lint-command )                   | No      | string          | No         | -          | Lint command. Input filename can be injected using `${INPUT}`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| - [lint-offset-columns](#languages_pattern1_items_lint-offset-columns )     | No      | number          | No         | -          | offset value to skip columns (will be added)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| - [lint-category-map](#languages_pattern1_items_lint-category-map )         | No      | object          | No         | -          | Map linter categories to LSP categories                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| - [lint-formats](#languages_pattern1_items_lint-formats )                   | No      | array of string | No         | -          | List of Vim errorformats to capture. See: https://vimhelp.org/quickfix.txt.html#errorformats. If this is not expressive enough, you can edit the `lint-command` to do some preprocessing, e.g. using `sed` or `jq`.<br /><br />`efm-langserver` uses a Go implementation to parse the errors, which comes with a CLI for quick testing: https://github.com/reviewdog/errorformat                                                                                                                                                                                                                                                                                                                                                                                                                |
+| - [lint-ignore-exit-code](#languages_pattern1_items_lint-ignore-exit-code ) | No      | boolean         | No         | -          | ignore exit code of lint                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| - [lint-offset](#languages_pattern1_items_lint-offset )                     | No      | number          | No         | -          | offset value to skip lines (will be subtracted)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| - [lint-after-open](#languages_pattern1_items_lint-after-open )             | No      | boolean         | No         | -          | lint after open (defaults to true)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| - [lint-on-save](#languages_pattern1_items_lint-on-save )                   | No      | boolean         | No         | -          | lint on save (defaults to true)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| - [lint-on-change](#languages_pattern1_items_lint-on-change )               | No      | boolean         | No         | -          | lint on change (defaults to true)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| - [lint-severity](#languages_pattern1_items_lint-severity )                 | No      | number          | No         | -          | default severity to show if violation doesn't provide severity. 1 = error, 2 = warning, 3 = info, 4 = hint                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| - [lint-source](#languages_pattern1_items_lint-source )                     | No      | string          | No         | -          | show where the lint came from, e.g. 'eslint'                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| - [lint-stdin](#languages_pattern1_items_lint-stdin )                       | No      | boolean         | No         | -          | use stdin for the lint                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| - [root-markers](#languages_pattern1_items_root-markers )                   | No      | array of string | No         | -          | markers to find root directory                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| - [require-marker](#languages_pattern1_items_require-marker )               | No      | boolean         | No         | -          | require a marker to run linter                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ##### <a name="languages_pattern1_items_prefix"></a>2.1.1.1. Property `prefix`
 
@@ -315,7 +220,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 | **Type**     | `number` |
 | **Required** | No       |
 
-**Description:** offset value to skip columns
+**Description:** offset value to skip columns (will be added)
 
 ##### <a name="languages_pattern1_items_lint-category-map"></a>2.1.1.8. Property `lint-category-map`
 
@@ -374,7 +279,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 | **Type**     | `number` |
 | **Required** | No       |
 
-**Description:** offset value to skip lines
+**Description:** offset value to skip lines (will be subtracted)
 
 ##### <a name="languages_pattern1_items_lint-after-open"></a>2.1.1.12. Property `lint-after-open`
 
@@ -384,7 +289,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 | **Required** | No        |
 | **Default**  | `true`    |
 
-**Description:** lint after open
+**Description:** lint after open (defaults to true)
 
 ##### <a name="languages_pattern1_items_lint-on-save"></a>2.1.1.13. Property `lint-on-save`
 
@@ -393,9 +298,18 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 | **Type**     | `boolean` |
 | **Required** | No        |
 
-**Description:** only lint on save, i.e. don't lint on text changed
+**Description:** lint on save (defaults to true)
 
-##### <a name="languages_pattern1_items_lint-severity"></a>2.1.1.14. Property `lint-severity`
+##### <a name="languages_pattern1_items_lint-on-change"></a>2.1.1.14. Property `lint-on-change`
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+**Description:** lint on change (defaults to true)
+
+##### <a name="languages_pattern1_items_lint-severity"></a>2.1.1.15. Property `lint-severity`
 
 |              |          |
 | ------------ | -------- |
@@ -404,7 +318,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** default severity to show if violation doesn't provide severity. 1 = error, 2 = warning, 3 = info, 4 = hint
 
-##### <a name="languages_pattern1_items_lint-source"></a>2.1.1.15. Property `lint-source`
+##### <a name="languages_pattern1_items_lint-source"></a>2.1.1.16. Property `lint-source`
 
 |              |          |
 | ------------ | -------- |
@@ -413,7 +327,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** show where the lint came from, e.g. 'eslint'
 
-##### <a name="languages_pattern1_items_lint-stdin"></a>2.1.1.16. Property `lint-stdin`
+##### <a name="languages_pattern1_items_lint-stdin"></a>2.1.1.17. Property `lint-stdin`
 
 |              |           |
 | ------------ | --------- |
@@ -422,15 +336,6 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 | **Default**  | `true`    |
 
 **Description:** use stdin for the lint
-
-##### <a name="languages_pattern1_items_lint-workspace"></a>2.1.1.17. Property `lint-workspace`
-
-|              |           |
-| ------------ | --------- |
-| **Type**     | `boolean` |
-| **Required** | No        |
-
-**Description:** indicates that the command lints the whole workspace and thus doesn't need a filename argument nor stdin
 
 ##### <a name="languages_pattern1_items_root-markers"></a>2.1.1.18. Property `root-markers`
 
@@ -469,16 +374,6 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** require a marker to run linter
 
-##### <a name="languages_pattern1_items_commands"></a>2.1.1.20. Property `commands`
-
-|                        |                       |
-| ---------------------- | --------------------- |
-| **Type**               | `array of object`     |
-| **Required**           | No                    |
-| **Same definition as** | [commands](#commands) |
-
-**Description:** list of commands
-
 ## <a name="tools"></a>3. Property `tools`
 
 |                           |                  |
@@ -507,16 +402,7 @@ must respect the following conditions
 
 **Description:** definition of the tool
 
-## <a name="version"></a>4. Property `version`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `number` |
-| **Required** | No       |
-
-**Description:** version of this yaml format
-
-## <a name="root-markers"></a>5. Property `root-markers`
+## <a name="root-markers"></a>4. Property `root-markers`
 
 |              |                   |
 | ------------ | ----------------- |
@@ -537,23 +423,14 @@ must respect the following conditions
 | ----------------------------------------- | ----------- |
 | [root-markers items](#root-markers_items) | -           |
 
-### <a name="root-markers_items"></a>5.1. root-markers items
+### <a name="root-markers_items"></a>4.1. root-markers items
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
 | **Required** | No       |
 
-## <a name="log-file"></a>6. Property `log-file`
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-
-**Description:** (YAML only) path to log file
-
-## <a name="log-level"></a>7. Property `log-level`
+## <a name="log-level"></a>5. Property `log-level`
 
 |              |          |
 | ------------ | -------- |
@@ -566,7 +443,7 @@ must respect the following conditions
 | ------------ | ------ |
 | **Minimum**  | &ge; 1 |
 
-## <a name="format-debounce"></a>8. Property `format-debounce`
+## <a name="format-debounce"></a>6. Property `format-debounce`
 
 |              |          |
 | ------------ | -------- |
@@ -575,7 +452,7 @@ must respect the following conditions
 
 **Description:** duration to debounce calls to the formatter executable. e.g: 1s
 
-## <a name="lint-debounce"></a>9. Property `lint-debounce`
+## <a name="lint-debounce"></a>7. Property `lint-debounce`
 
 |              |          |
 | ------------ | -------- |
@@ -585,4 +462,4 @@ must respect the following conditions
 **Description:** duration to debounce calls to the linter executable. e.g.: 1s
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-08-08 at 10:08:32 +0200
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-08-22 at 09:33:44 +0200
