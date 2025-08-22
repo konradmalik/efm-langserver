@@ -18,6 +18,8 @@ Notable changes from the original:
 - added tests (always in progress)
 - refactored, cleaned and more maintainable code (always in progress)
 - fixed and applied sane defaults for options like `LintAfterOpen`, `LintOnSave` etc.
+- removed explicit support for `LintWorkspace` (linters that lint the whole workspace and do not need filename)
+    - it may be implemented back in the future if needed, but I've no usage of such linters, and a quick search through [`creativenull/efmls-configs-nvim`](https://github.com/creativenull/efmls-configs-nvim) showed no usage of this property
 
 ![linting](./screenshot.png)
 
