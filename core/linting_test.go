@@ -65,10 +65,9 @@ func TestLintFileMatched(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	assert.NoError(t, err)
 
-	d := uriToDiag[uri]
 	assert.Len(t, d, 1)
 	assert.Equal(t, d[0].Range.Start.Line, 1)
 	assert.Equal(t, d[0].Range.Start.Character, 0)
@@ -102,10 +101,9 @@ func TestLintFileMatchedWildcard(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	assert.NoError(t, err)
 
-	d := uriToDiag[uri]
 	assert.Len(t, d, 1)
 	assert.Equal(t, d[0].Range.Start.Line, 1)
 	assert.Equal(t, d[0].Range.Start.Character, 0)
@@ -143,10 +141,9 @@ func TestLintOffsetColumnsZero(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	assert.NoError(t, err)
 
-	d := uriToDiag[uri]
 	assert.Len(t, d, 1)
 	assert.Equal(t, d[0].Range.Start.Character, 0)
 }
@@ -180,10 +177,9 @@ func TestLintOffsetColumnsNoOffset(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	assert.NoError(t, err)
 
-	d := uriToDiag[uri]
 	assert.Len(t, d, 1)
 	assert.Equal(t, d[0].Range.Start.Character, 0)
 }
@@ -218,10 +214,9 @@ func TestLintOffsetColumnsNonZero(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	assert.NoError(t, err)
 
-	d := uriToDiag[uri]
 	assert.Len(t, d, 1)
 	assert.Equal(t, d[0].Range.Start.Character, 1)
 }
@@ -259,10 +254,9 @@ func TestLintCategoryMap(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	assert.NoError(t, err)
 
-	d := uriToDiag[uri]
 	assert.Len(t, d, 1)
 	assert.Equal(t, d[0].Severity, types.DiagnosticSeverity(3))
 }
@@ -296,10 +290,10 @@ func TestLintRequireRootMarker(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	assert.NoError(t, err)
 
-	assert.Empty(t, uriToDiag)
+	assert.Empty(t, d)
 }
 
 func TestLintSingleEntry(t *testing.T) {
@@ -335,11 +329,9 @@ func TestLintSingleEntry(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	assert.NoError(t, err)
-	assert.Len(t, uriToDiag, 1)
 
-	d := uriToDiag[uri]
 	assert.Len(t, d, 1)
 	assert.Equal(t, d[0].Range.Start.Line, 1)
 	assert.Equal(t, d[0].Range.Start.Character, 0)
@@ -378,11 +370,9 @@ func TestLintMultipleEntries(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri2, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri2, types.EventTypeChange)
 	assert.NoError(t, err)
-	assert.Len(t, uriToDiag, 1)
 
-	d := uriToDiag[uri2]
 	assert.Len(t, d, 2)
 	assert.Equal(t, d[0].Range.Start.Line, 1)
 	assert.Equal(t, d[0].Range.Start.Character, 2)
@@ -416,11 +406,9 @@ func TestLintNoDiagnostics(t *testing.T) {
 		},
 	}
 
-	uriToDiag, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
 	assert.NoError(t, err)
-	assert.Len(t, uriToDiag, 1)
 
-	d := uriToDiag[uri]
 	assert.Empty(t, d)
 }
 
@@ -501,10 +489,9 @@ func TestLintEventTypes(t *testing.T) {
 			h.configs["vim"][0].LintAfterOpen = boolPtr(tt.lintAfterOpen)
 			h.configs["vim"][0].LintOnChange = boolPtr(tt.lintOnChange)
 			h.configs["vim"][0].LintOnSave = boolPtr(tt.lintOnSave)
-			uriToDiag, err := h.lintDocument(context.Background(), nil, uri, tt.event)
+			d, err := h.lintDocument(context.Background(), nil, uri, tt.event)
 			assert.NoError(t, err)
 
-			d := uriToDiag[uri]
 			assert.Equal(t, tt.expectMessages, len(d))
 		})
 	}

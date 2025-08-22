@@ -48,31 +48,26 @@ func (h *LangHandler) ScheduleLinting(notifier notifier, uri types.DocumentURI, 
 }
 
 func (h *LangHandler) runLintersPublishDiagnostics(ctx context.Context, notifier notifier, uri types.DocumentURI, eventType types.EventType) {
-	uriToDiagnostics, err := h.lintDocument(ctx, notifier, uri, eventType)
+	diagnostics, err := h.lintDocument(ctx, notifier, uri, eventType)
 	if err != nil {
 		h.logger.Println(err)
 		return
 	}
 
-	for diagURI, diagnostics := range uriToDiagnostics {
-		if diagURI == "file:" {
-			diagURI = uri
-		}
-		version := 0
-		if _, ok := h.files[uri]; ok {
-			version = h.files[uri].Version
-		}
-		notifier.PublishDiagnostics(
-			ctx,
-			types.PublishDiagnosticsParams{
-				URI:         diagURI,
-				Diagnostics: diagnostics,
-				Version:     version,
-			})
+	version := 0
+	if _, ok := h.files[uri]; ok {
+		version = h.files[uri].Version
 	}
+	notifier.PublishDiagnostics(
+		ctx,
+		types.PublishDiagnosticsParams{
+			URI:         uri,
+			Diagnostics: diagnostics,
+			Version:     version,
+		})
 }
 
-func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri types.DocumentURI, eventType types.EventType) (map[types.DocumentURI][]types.Diagnostic, error) {
+func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri types.DocumentURI, eventType types.EventType) ([]types.Diagnostic, error) {
 	f, ok := h.files[uri]
 	if !ok {
 		return nil, fmt.Errorf("document not found: %v", uri)
@@ -84,10 +79,7 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 		return nil, nil
 	}
 
-	uriToDiagnostics := map[types.DocumentURI][]types.Diagnostic{
-		uri: {},
-	}
-
+	diagnostics := make([]types.Diagnostic, 0)
 	for _, config := range configs {
 		rootPath := h.findRootPath(f.NormalizedFilename, config)
 		cmdStr := buildLintCommandString(ctx, rootPath, f, config)
@@ -122,11 +114,11 @@ func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri t
 			}
 
 			diagnostic := parseEfmEntryToDiagnostic(entry, &config, f)
-			uriToDiagnostics[uri] = append(uriToDiagnostics[uri], diagnostic)
+			diagnostics = append(diagnostics, diagnostic)
 		}
 	}
 
-	return uriToDiagnostics, nil
+	return diagnostics, nil
 }
 
 func getSeverity(typ rune, categoryMap map[string]string, defaultSeverity types.DiagnosticSeverity) types.DiagnosticSeverity {
