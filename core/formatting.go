@@ -7,35 +7,13 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/konradmalik/efm-langserver/types"
 )
 
-func (h *LangHandler) Formatting(uri types.DocumentURI, rng *types.Range, opt types.FormattingOptions) ([]types.TextEdit, error) {
-	if h.formatTimer != nil {
-		if h.loglevel >= 4 {
-			h.logger.Printf("format debounced: %v", h.formatDebounce)
-		}
-		return []types.TextEdit{}, nil
-	}
+var unfilledPlaceholders = regexp.MustCompile(`\${[^}]*}`)
 
-	h.formatMu.Lock()
-	h.formatTimer = time.AfterFunc(h.formatDebounce, func() {
-		h.formatMu.Lock()
-		h.formatTimer = nil
-		h.formatMu.Unlock()
-	})
-	h.formatMu.Unlock()
-	return h.rangeFormatting(uri, rng, opt)
-}
-
-var (
-	unfilledPlaceholders = regexp.MustCompile(`\${[^}]*}`)
-)
-
-// rangeFormatting formats a document or a selected range using configured formatters.
-func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, options types.FormattingOptions) ([]types.TextEdit, error) {
+func (h *LangHandler) RangeFormatting(uri types.DocumentURI, rng *types.Range, options types.FormattingOptions) ([]types.TextEdit, error) {
 	f, ok := h.files[uri]
 	if !ok {
 		return nil, fmt.Errorf("document not found: %v", uri)
@@ -55,19 +33,19 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 		rootPath := h.findRootPath(f.NormalizedFilename, config)
 		cmdStr, err := buildFormatCommandString(rootPath, f, options, rng, config)
 		if err != nil {
-			h.logger.Println("command build error:", err)
+			h.Logger.Println("command build error:", err)
 			continue
 		}
 
 		cmd := buildExecCmd(context.Background(), cmdStr, rootPath, *f, config, config.FormatStdin)
 		out, err := runFormattingCommand(cmd)
 
-		if h.loglevel >= 3 {
-			h.logger.Println(cmdStr+":", string(out))
+		if h.Loglevel >= 3 {
+			h.Logger.Println(cmdStr+":", string(out))
 		}
 
 		if err != nil {
-			h.logger.Println("formatting error:", err)
+			h.Logger.Println("formatting error:", err)
 			continue
 		}
 
@@ -79,8 +57,8 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 		return nil, fmt.Errorf("format for LanguageID not supported: %v", f.LanguageID)
 	}
 
-	if h.loglevel >= 3 {
-		h.logger.Println("format succeeded")
+	if h.Loglevel >= 3 {
+		h.Logger.Println("format succeeded")
 	}
 	return ComputeEdits(uri, originalText, formattedText)
 }
@@ -173,8 +151,8 @@ func runFormattingCommand(cmd *exec.Cmd) (string, error) {
 }
 
 func (h *LangHandler) logUnsupportedFormat(langID string) {
-	if h.loglevel >= 2 {
-		h.logger.Printf("format for LanguageID not supported: %v", langID)
+	if h.Loglevel >= 2 {
+		h.Logger.Printf("format for LanguageID not supported: %v", langID)
 	}
 }
 

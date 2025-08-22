@@ -6,23 +6,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/konradmalik/efm-langserver/types"
 )
 
 type LangHandler struct {
-	formatMu       sync.Mutex
-	lintMu         sync.Mutex
-	loglevel       int
-	logger         *log.Logger
+	Loglevel       int
+	Logger         *log.Logger
 	configs        map[string][]types.Language
 	files          map[types.DocumentURI]*fileRef
-	lintDebounce   time.Duration
-	lintTimer      *time.Timer
-	formatDebounce time.Duration
-	formatTimer    *time.Timer
+	LintDebounce   time.Duration
+	FormatDebounce time.Duration
 	RootPath       string
 	rootMarkers    []string
 }
@@ -45,15 +40,13 @@ func NewConfig() *types.Config {
 
 func NewHandler(logger *log.Logger, config *types.Config) *LangHandler {
 	handler := &LangHandler{
-		loglevel:     config.LogLevel,
-		logger:       logger,
+		Loglevel:     config.LogLevel,
+		Logger:       logger,
 		configs:      *config.Languages,
 		files:        make(map[types.DocumentURI]*fileRef),
-		lintDebounce: config.LintDebounce,
-		lintTimer:    nil,
+		LintDebounce: config.LintDebounce,
 
-		formatDebounce: config.FormatDebounce,
-		formatTimer:    nil,
+		FormatDebounce: config.FormatDebounce,
 		rootMarkers:    *config.RootMarkers,
 	}
 	return handler
@@ -105,41 +98,27 @@ func (h *LangHandler) UpdateConfiguration(config *types.Config) (any, error) {
 		h.rootMarkers = *config.RootMarkers
 	}
 	if config.LogLevel > 0 {
-		h.loglevel = config.LogLevel
+		h.Loglevel = config.LogLevel
 	}
 	if config.LintDebounce > 0 {
-		h.lintDebounce = config.LintDebounce
+		h.LintDebounce = config.LintDebounce
 	}
 	if config.FormatDebounce > 0 {
-		h.formatDebounce = config.FormatDebounce
+		h.FormatDebounce = config.FormatDebounce
 	}
 	if config.LogLevel > 0 {
-		h.loglevel = config.LogLevel
+		h.Loglevel = config.LogLevel
 	}
 
 	return nil, nil
 }
 
-func (h *LangHandler) Close() {
-	if h.formatTimer != nil {
-		h.formatTimer.Stop()
-	}
-	if h.lintTimer != nil {
-		h.lintTimer.Stop()
-	}
-}
-
-func (h *LangHandler) OnCloseFile(uri types.DocumentURI) error {
+func (h *LangHandler) CloseFile(uri types.DocumentURI) error {
 	delete(h.files, uri)
 	return nil
 }
 
-func (h *LangHandler) OnSaveFile(notifier notifier, uri types.DocumentURI) error {
-	h.ScheduleLinting(notifier, uri, types.EventTypeSave)
-	return nil
-}
-
-func (h *LangHandler) OnOpenFile(notifier notifier, uri types.DocumentURI, languageID string, version int, text string) error {
+func (h *LangHandler) OpenFile(uri types.DocumentURI, languageID string, version int, text string) error {
 	fname, err := normalizedFilenameFromUri(uri)
 	if err != nil {
 		return err
@@ -153,11 +132,10 @@ func (h *LangHandler) OnOpenFile(notifier notifier, uri types.DocumentURI, langu
 	}
 	h.files[uri] = f
 
-	h.ScheduleLinting(notifier, uri, types.EventTypeOpen)
 	return nil
 }
 
-func (h *LangHandler) OnUpdateFile(notifier notifier, uri types.DocumentURI, text string, version *int, eventType types.EventType) error {
+func (h *LangHandler) UpdateFile(uri types.DocumentURI, text string, version *int) error {
 	f, ok := h.files[uri]
 	if !ok {
 		return fmt.Errorf("document not found: %v", uri)
@@ -167,7 +145,6 @@ func (h *LangHandler) OnUpdateFile(notifier notifier, uri types.DocumentURI, tex
 		f.Version = *version
 	}
 
-	h.ScheduleLinting(notifier, uri, eventType)
 	return nil
 }
 

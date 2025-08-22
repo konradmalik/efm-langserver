@@ -3,14 +3,21 @@ package lsp
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
 
 	"github.com/konradmalik/efm-langserver/core"
+	"github.com/konradmalik/efm-langserver/types"
 )
 
 type LspHandler struct {
 	langHandler *core.LangHandler
+	formatMu    sync.Mutex
+	lintMu      sync.Mutex
+	lintTimer   *time.Timer
+	formatTimer *time.Timer
 }
 
 func NewHandler(langHandler *core.LangHandler) *LspHandler {
@@ -42,4 +49,60 @@ func (h *LspHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 	}
 
 	return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}
+}
+
+func (h *LspHandler) Formatting(uri types.DocumentURI, rng *types.Range, opt types.FormattingOptions) ([]types.TextEdit, error) {
+	if h.formatTimer != nil {
+		if h.langHandler.Loglevel >= 4 {
+			h.langHandler.Logger.Printf("format debounced: %v", h.langHandler.FormatDebounce)
+		}
+		return []types.TextEdit{}, nil
+	}
+
+	h.formatMu.Lock()
+	h.formatTimer = time.AfterFunc(h.langHandler.FormatDebounce, func() {
+		h.formatMu.Lock()
+		h.formatTimer = nil
+		h.formatMu.Unlock()
+	})
+	h.formatMu.Unlock()
+	return h.langHandler.RangeFormatting(uri, rng, opt)
+}
+
+var running = make(map[types.DocumentURI]context.CancelFunc)
+
+func (h *LspHandler) ScheduleLinting(notifier LspNotifier, uri types.DocumentURI, eventType types.EventType) {
+	if h.lintTimer != nil {
+		h.lintTimer.Reset(h.langHandler.LintDebounce)
+		if h.langHandler.Loglevel >= 4 {
+			h.langHandler.Logger.Printf("lint debounced: %v", h.langHandler.LintDebounce)
+		}
+		return
+	}
+	h.lintMu.Lock()
+	h.lintTimer = time.AfterFunc(h.langHandler.LintDebounce, func() {
+		h.lintTimer = nil
+
+		h.lintMu.Lock()
+		cancel, ok := running[uri]
+		if ok {
+			cancel()
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		running[uri] = cancel
+		h.lintMu.Unlock()
+
+		go h.langHandler.RunAllLintersWithNotifier(ctx, uri, eventType, &notifier)
+	})
+	h.lintMu.Unlock()
+}
+
+func (h *LspHandler) Close() {
+	if h.formatTimer != nil {
+		h.formatTimer.Stop()
+	}
+	if h.lintTimer != nil {
+		h.lintTimer.Stop()
+	}
 }

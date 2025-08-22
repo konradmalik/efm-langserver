@@ -18,15 +18,19 @@ func (h *LspHandler) HandleTextDocumentDidSave(_ context.Context, conn *jsonrpc2
 		return nil, err
 	}
 
-	notifier := NewNotifier(conn)
+	var event types.EventType
 	if params.Text != nil {
-		err = h.langHandler.OnUpdateFile(notifier, params.TextDocument.URI, *params.Text, nil, types.EventTypeSave)
+		err = h.langHandler.UpdateFile(params.TextDocument.URI, *params.Text, nil)
+		event = types.EventTypeSave
 	} else {
-		err = h.langHandler.OnSaveFile(notifier, params.TextDocument.URI)
+		event = types.EventTypeChange
 	}
 	if err != nil {
 		return nil, err
 	}
+
+	notifier := NewNotifier(conn)
+	h.ScheduleLinting(*notifier, params.TextDocument.URI, event)
 
 	return nil, nil
 }

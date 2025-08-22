@@ -18,7 +18,7 @@ func (h *LspHandler) HandleTextDocumentDidClose(_ context.Context, _ *jsonrpc2.C
 		return nil, err
 	}
 
-	if err := h.langHandler.OnCloseFile(params.TextDocument.URI); err != nil {
+	if err := h.langHandler.CloseFile(params.TextDocument.URI); err != nil {
 		return nil, err
 	}
 	return nil, nil

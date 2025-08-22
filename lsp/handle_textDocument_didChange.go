@@ -18,11 +18,14 @@ func (h *LspHandler) HandleTextDocumentDidChange(_ context.Context, conn *jsonrp
 		return nil, err
 	}
 
-	notifier := NewNotifier(conn)
 	for _, change := range params.ContentChanges {
-		if err := h.langHandler.OnUpdateFile(notifier, params.TextDocument.URI, change.Text, &params.TextDocument.Version, types.EventTypeChange); err != nil {
+		if err := h.langHandler.UpdateFile(params.TextDocument.URI, change.Text, &params.TextDocument.Version); err != nil {
 			return nil, err
 		}
 	}
+
+	notifier := NewNotifier(conn)
+	h.ScheduleLinting(*notifier, params.TextDocument.URI, types.EventTypeChange)
+
 	return nil, nil
 }

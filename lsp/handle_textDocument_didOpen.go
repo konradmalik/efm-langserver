@@ -18,10 +18,12 @@ func (h *LspHandler) HandleTextDocumentDidOpen(_ context.Context, conn *jsonrpc2
 		return nil, err
 	}
 
-	notifier := NewNotifier(conn)
-	if err := h.langHandler.OnOpenFile(notifier, params.TextDocument.URI, params.TextDocument.LanguageID, params.TextDocument.Version, params.TextDocument.Text); err != nil {
+	if err := h.langHandler.OpenFile(params.TextDocument.URI, params.TextDocument.LanguageID, params.TextDocument.Version, params.TextDocument.Text); err != nil {
 		return nil, err
 	}
+
+	notifier := NewNotifier(conn)
+	h.ScheduleLinting(*notifier, params.TextDocument.URI, types.EventTypeOpen)
 
 	return nil, nil
 }
