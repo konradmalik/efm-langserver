@@ -13,7 +13,7 @@ import (
 
 var unfilledPlaceholders = regexp.MustCompile(`\${[^}]*}`)
 
-func (h *LangHandler) RangeFormatting(uri types.DocumentURI, rng *types.Range, options types.FormattingOptions) ([]types.TextEdit, error) {
+func (h *LangHandler) RangeFormatting(ctx context.Context, uri types.DocumentURI, rng *types.Range, options types.FormattingOptions) ([]types.TextEdit, error) {
 	f, ok := h.files[uri]
 	if !ok {
 		return nil, fmt.Errorf("document not found: %v", uri)
@@ -31,26 +31,15 @@ func (h *LangHandler) RangeFormatting(uri types.DocumentURI, rng *types.Range, o
 
 	for _, config := range configs {
 		rootPath := h.findRootPath(f.NormalizedFilename, config)
-		cmdStr, err := buildFormatCommandString(rootPath, f, options, rng, config)
-		if err != nil {
-			h.logger.Println("command build error:", err)
-			continue
-		}
-
-		cmd := buildExecCmd(context.Background(), cmdStr, rootPath, *f, config, config.FormatStdin)
-		out, err := runFormattingCommand(cmd)
-
-		if h.logLevel >= 3 {
-			h.logger.Println(cmdStr+":", string(out))
-		}
+		newText, err := h.formatDocument(ctx, rootPath, *f, rng, options, config)
 
 		if err != nil {
-			h.logger.Println("formatting error:", err)
+			h.logger.Println(err)
 			continue
 		}
 
 		formatted = true
-		formattedText = strings.ReplaceAll(out, carriageReturn, "")
+		formattedText = newText
 	}
 
 	if !formatted {
@@ -61,6 +50,26 @@ func (h *LangHandler) RangeFormatting(uri types.DocumentURI, rng *types.Range, o
 		h.logger.Println("format succeeded")
 	}
 	return ComputeEdits(uri, originalText, formattedText)
+}
+
+func (h *LangHandler) formatDocument(ctx context.Context, rootPath string, f fileRef, rng *types.Range, options types.FormattingOptions, config types.Language) (string, error) {
+	cmdStr, err := buildFormatCommandString(rootPath, &f, options, rng, config)
+	if err != nil {
+		return "", fmt.Errorf("command build error: %s", err)
+	}
+
+	cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.FormatStdin)
+	out, err := runFormattingCommand(cmd)
+
+	if h.logLevel >= 3 {
+		h.logger.Println(cmdStr+":", string(out))
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("formatting error: %s", err)
+	}
+
+	return strings.ReplaceAll(out, carriageReturn, ""), nil
 }
 
 func applyOptionsPlaceholders(command string, options types.FormattingOptions) (string, error) {

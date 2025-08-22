@@ -76,16 +76,16 @@ func TestBuildCommand_HandlesPlaceholders(t *testing.T) {
 	assert.Contains(t, cmdStr, "file.txt")
 }
 
-func TestRunFormattingCommand_WithStdin(t *testing.T) {
+func TestFormatDocument_WithStdin(t *testing.T) {
+	h := &LangHandler{
+		logger: log.New(log.Writer(), "", log.LstdFlags),
+	}
+
 	cfg := types.Language{FormatCommand: "cat -", FormatStdin: true}
 	f := fileRef{Text: "hello text", LanguageID: "go", NormalizedFilename: "file.txt"}
-
 	tmpDir := t.TempDir()
-	cmdStr, err := buildFormatCommandString(tmpDir, &f, nil, nil, cfg)
-	assert.NoError(t, err)
-	cmd := buildExecCmd(t.Context(), cmdStr, tmpDir, f, cfg, cfg.FormatStdin)
 
-	out, err := runFormattingCommand(cmd)
+	out, err := h.formatDocument(t.Context(), tmpDir, f, nil, nil, cfg)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "hello text", strings.TrimSpace(out))
@@ -107,7 +107,7 @@ func TestRangeFormatting_Success(t *testing.T) {
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		logLevel: 3,
 	}
-	edits, err := h.RangeFormatting(types.DocumentURI("file://"+testfile), nil, nil)
+	edits, err := h.RangeFormatting(t.Context(), types.DocumentURI("file://"+testfile), nil, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, edits)
 }
@@ -139,7 +139,7 @@ func TestRangeFormatting_RequireRootMatcher(t *testing.T) {
 		},
 	}
 
-	d, err := h.RangeFormatting(uri, nil, types.FormattingOptions{})
+	d, err := h.RangeFormatting(t.Context(), uri, nil, types.FormattingOptions{})
 	assert.NoError(t, err)
 	assert.Empty(t, d)
 }

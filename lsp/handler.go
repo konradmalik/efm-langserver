@@ -70,7 +70,7 @@ func (h *LspHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 	return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}
 }
 
-func (h *LspHandler) Formatting(uri types.DocumentURI, rng *types.Range, opt types.FormattingOptions) ([]types.TextEdit, error) {
+func (h *LspHandler) Formatting(ctx context.Context, uri types.DocumentURI, rng *types.Range, opt types.FormattingOptions) ([]types.TextEdit, error) {
 	if h.formatTimer != nil {
 		if h.logLevel >= 4 {
 			h.logger.Printf("format debounced: %v", h.formatDebounce)
@@ -85,7 +85,7 @@ func (h *LspHandler) Formatting(uri types.DocumentURI, rng *types.Range, opt typ
 		h.formatMu.Unlock()
 	})
 	h.formatMu.Unlock()
-	return h.langHandler.RangeFormatting(uri, rng, opt)
+	return h.langHandler.RangeFormatting(ctx, uri, rng, opt)
 }
 
 var running = make(map[types.DocumentURI]context.CancelFunc)
