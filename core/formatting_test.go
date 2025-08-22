@@ -91,7 +91,7 @@ func TestFormatDocument_WithStdin(t *testing.T) {
 	assert.Equal(t, "hello text", strings.TrimSpace(out))
 }
 
-func TestRangeFormatting_Success(t *testing.T) {
+func TestRunFormatters_Success(t *testing.T) {
 	tmpDir := t.TempDir()
 	testfile := filepath.Join(tmpDir, "text.txt")
 	err := os.WriteFile(testfile, []byte("test"), 0755)
@@ -107,12 +107,12 @@ func TestRangeFormatting_Success(t *testing.T) {
 		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		logLevel: 3,
 	}
-	edits, err := h.RangeFormatting(t.Context(), types.DocumentURI("file://"+testfile), nil, nil)
+	edits, err := h.RunAllFormatters(t.Context(), types.DocumentURI("file://"+testfile), nil, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, edits)
 }
 
-func TestRangeFormatting_RequireRootMatcher(t *testing.T) {
+func TestRunFormatters_RequireRootMatcher(t *testing.T) {
 	base, _ := os.Getwd()
 	filepath := filepath.Join(base, "foo")
 	uri := ParseLocalFileToURI(filepath)
@@ -139,7 +139,7 @@ func TestRangeFormatting_RequireRootMatcher(t *testing.T) {
 		},
 	}
 
-	d, err := h.RangeFormatting(t.Context(), uri, nil, types.FormattingOptions{})
+	d, err := h.RunAllFormatters(t.Context(), uri, nil, types.FormattingOptions{})
 	assert.NoError(t, err)
 	assert.Empty(t, d)
 }

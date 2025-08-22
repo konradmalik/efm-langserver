@@ -13,7 +13,7 @@ import (
 
 var unfilledPlaceholders = regexp.MustCompile(`\${[^}]*}`)
 
-func (h *LangHandler) RangeFormatting(ctx context.Context, uri types.DocumentURI, rng *types.Range, options types.FormattingOptions) ([]types.TextEdit, error) {
+func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentURI, rng *types.Range, options types.FormattingOptions) ([]types.TextEdit, error) {
 	f, ok := h.files[uri]
 	if !ok {
 		return nil, fmt.Errorf("document not found: %v", uri)

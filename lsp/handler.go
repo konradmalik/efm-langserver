@@ -85,7 +85,7 @@ func (h *LspHandler) Formatting(ctx context.Context, uri types.DocumentURI, rng 
 		h.formatMu.Unlock()
 	})
 	h.formatMu.Unlock()
-	return h.langHandler.RangeFormatting(ctx, uri, rng, opt)
+	return h.langHandler.RunAllFormatters(ctx, uri, rng, opt)
 }
 
 var running = make(map[types.DocumentURI]context.CancelFunc)
