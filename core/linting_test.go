@@ -2,10 +2,12 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/konradmalik/efm-langserver/types"
@@ -22,7 +24,7 @@ func TestLintNoLinter(t *testing.T) {
 		},
 	}
 
-	_, err := h.lintDocument(context.Background(), nil, "file:///foo", types.EventTypeChange)
+	_, err := h.runAllLintersWithMockedNotifier(t, "file:///foo")
 	assert.NoError(t, err)
 }
 
@@ -35,7 +37,7 @@ func TestLintNoFileMatched(t *testing.T) {
 		},
 	}
 
-	_, err := h.lintDocument(context.Background(), nil, "file:///bar", types.EventTypeChange)
+	_, err := h.runAllLintersWithMockedNotifier(t, "file:///bar")
 	assert.Error(t, err)
 }
 
@@ -65,7 +67,7 @@ func TestLintFileMatched(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -101,7 +103,7 @@ func TestLintFileMatchedWildcard(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -141,7 +143,7 @@ func TestLintOffsetColumnsZero(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -177,7 +179,7 @@ func TestLintOffsetColumnsNoOffset(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -214,7 +216,7 @@ func TestLintOffsetColumnsNonZero(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -254,7 +256,7 @@ func TestLintCategoryMap(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -290,7 +292,7 @@ func TestLintRequireRootMarker(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri)
 	assert.NoError(t, err)
 
 	assert.Empty(t, d)
@@ -329,7 +331,7 @@ func TestLintSingleEntry(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -370,7 +372,7 @@ func TestLintMultipleEntries(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri2, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri2)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 2)
@@ -406,7 +408,7 @@ func TestLintNoDiagnostics(t *testing.T) {
 		},
 	}
 
-	d, err := h.lintDocument(context.Background(), nil, uri, types.EventTypeChange)
+	d, err := h.runAllLintersWithMockedNotifier(t, uri)
 	assert.NoError(t, err)
 
 	assert.Empty(t, d)
@@ -489,9 +491,8 @@ func TestLintEventTypes(t *testing.T) {
 			h.configs["vim"][0].LintAfterOpen = boolPtr(tt.lintAfterOpen)
 			h.configs["vim"][0].LintOnChange = boolPtr(tt.lintOnChange)
 			h.configs["vim"][0].LintOnSave = boolPtr(tt.lintOnSave)
-			d, err := h.lintDocument(context.Background(), nil, uri, tt.event)
+			d, err := h.runAllLintersWithMockedNotifierWithEvent(t, uri, tt.event)
 			assert.NoError(t, err)
-
 			assert.Equal(t, tt.expectMessages, len(d))
 		})
 	}
@@ -787,7 +788,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			diag := parseEfmEntryToDiagnostic(tt.entry, tt.cfg, file)
+			diag := parseEfmEntryToDiagnostic(tt.entry, *tt.cfg, *file)
 			assert.Equal(t, tt.expected.Message, diag.Message)
 			assert.Equal(t, tt.expected.Severity, diag.Severity)
 			assert.Equal(t, tt.expected.Range.Start.Line, diag.Range.Start.Line)
@@ -796,4 +797,30 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			assert.Equal(t, tt.expected.Range.End.Character, diag.Range.End.Character)
 		})
 	}
+}
+
+type testNotifier struct {
+	Errors      []string
+	Diagnostics []types.Diagnostic
+}
+
+func (n *testNotifier) LogMessage(ctx context.Context, typ types.MessageType, message string) {
+	n.Errors = append(n.Errors, message)
+}
+
+func (n *testNotifier) PublishDiagnostics(ctx context.Context, params types.PublishDiagnosticsParams) {
+	n.Diagnostics = append(n.Diagnostics, params.Diagnostics...)
+}
+
+func (h *LangHandler) runAllLintersWithMockedNotifier(t *testing.T, uri types.DocumentURI) ([]types.Diagnostic, error) {
+	return h.runAllLintersWithMockedNotifierWithEvent(t, uri, types.EventTypeChange)
+}
+
+func (h *LangHandler) runAllLintersWithMockedNotifierWithEvent(t *testing.T, uri types.DocumentURI, event types.EventType) ([]types.Diagnostic, error) {
+	notifier := testNotifier{}
+	h.runAllLintersWithNotifier(t.Context(), uri, event, &notifier)
+	if len(notifier.Errors) != 0 {
+		return nil, fmt.Errorf("%s", strings.Join(notifier.Errors, ";"))
+	}
+	return notifier.Diagnostics, nil
 }

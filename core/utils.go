@@ -37,7 +37,7 @@ func getAllConfigsForLang(allConfigs map[string][]types.Language, langId string)
 	return configsForLang
 }
 
-func buildExecCmd(ctx context.Context, command, rootPath string, f *fileRef, config types.Language, stdin bool) *exec.Cmd {
+func buildExecCmd(ctx context.Context, command, rootPath string, f fileRef, config types.Language, stdin bool) *exec.Cmd {
 	cmd := exec.CommandContext(ctx, shell, shellFlag, command)
 	cmd.Dir = rootPath
 	cmd.Env = append(os.Environ(), config.Env...)

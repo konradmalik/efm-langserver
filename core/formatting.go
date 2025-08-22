@@ -59,7 +59,7 @@ func (h *LangHandler) rangeFormatting(uri types.DocumentURI, rng *types.Range, o
 			continue
 		}
 
-		cmd := buildExecCmd(context.Background(), cmdStr, rootPath, f, config, config.FormatStdin)
+		cmd := buildExecCmd(context.Background(), cmdStr, rootPath, *f, config, config.FormatStdin)
 		out, err := runFormattingCommand(cmd)
 
 		if h.loglevel >= 3 {

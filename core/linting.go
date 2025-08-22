@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/konradmalik/efm-langserver/types"
@@ -42,80 +43,115 @@ func (h *LangHandler) ScheduleLinting(notifier notifier, uri types.DocumentURI, 
 		ctx, cancel := context.WithCancel(context.Background())
 		running[uri] = cancel
 		h.lintMu.Unlock()
-		go h.runLintersPublishDiagnostics(ctx, notifier, uri, eventType)
+
+		go h.runAllLintersWithNotifier(ctx, uri, eventType, notifier)
 	})
 	h.lintMu.Unlock()
 }
 
-func (h *LangHandler) runLintersPublishDiagnostics(ctx context.Context, notifier notifier, uri types.DocumentURI, eventType types.EventType) {
-	diagnostics, err := h.lintDocument(ctx, notifier, uri, eventType)
+func (h *LangHandler) runAllLintersWithNotifier(ctx context.Context, uri types.DocumentURI, eventType types.EventType, notifier notifier) {
+	diagnosticsOut := make(chan types.PublishDiagnosticsParams)
+	errorsOut := make(chan error)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for err := range errorsOut {
+			notifier.LogMessage(ctx, types.LogError, err.Error())
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for diag := range diagnosticsOut {
+			notifier.PublishDiagnostics(ctx, diag)
+		}
+	}()
+
+	err := h.runAllLinters(ctx, uri, eventType, diagnosticsOut, errorsOut)
 	if err != nil {
 		h.logger.Println(err)
-		return
+		notifier.LogMessage(ctx, types.LogError, err.Error())
 	}
 
-	version := 0
-	if _, ok := h.files[uri]; ok {
-		version = h.files[uri].Version
-	}
-	notifier.PublishDiagnostics(
-		ctx,
-		types.PublishDiagnosticsParams{
-			URI:         uri,
-			Diagnostics: diagnostics,
-			Version:     version,
-		})
+	close(diagnosticsOut)
+	close(errorsOut)
+	wg.Wait()
 }
 
-func (h *LangHandler) lintDocument(ctx context.Context, notifier notifier, uri types.DocumentURI, eventType types.EventType) ([]types.Diagnostic, error) {
+func (h *LangHandler) runAllLinters(
+	ctx context.Context, uri types.DocumentURI, eventType types.EventType, diagnosticsOut chan<- types.PublishDiagnosticsParams, errorsOut chan<- error) error {
 	f, ok := h.files[uri]
 	if !ok {
-		return nil, fmt.Errorf("document not found: %v", uri)
+		return fmt.Errorf("document not found: %v", uri)
 	}
 
 	configs := getLintConfigsForDocument(f.NormalizedFilename, f.LanguageID, h.configs, eventType)
 	if len(configs) == 0 {
 		h.logUnsupportedLint(f.LanguageID)
-		return nil, nil
+		return nil
 	}
 
-	diagnostics := make([]types.Diagnostic, 0)
+	var wg sync.WaitGroup
 	for _, config := range configs {
-		rootPath := h.findRootPath(f.NormalizedFilename, config)
-		cmdStr := buildLintCommandString(ctx, rootPath, f, config)
-		cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.LintStdin)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			rootPath := h.findRootPath(f.NormalizedFilename, config)
+			diagnostics, err := h.lintDocument(ctx, rootPath, uri, *f, config)
+			if err != nil {
+				errorsOut <- err
+				h.logger.Println(err)
+				return
+			}
 
-		lintOutput, err := runLintCommand(cmd, &config)
-		if h.loglevel >= 3 {
-			h.logger.Println(cmdStr+":", string(lintOutput))
-		}
-		if err != nil {
-			notifier.LogMessage(ctx, types.LogError, err.Error())
-			h.logger.Println(err)
+			diagnosticsOut <- types.PublishDiagnosticsParams{
+				URI:         uri,
+				Diagnostics: diagnostics,
+				Version:     f.Version,
+			}
+		}()
+	}
+
+	wg.Wait()
+	return nil
+}
+
+func (h *LangHandler) lintDocument(ctx context.Context, rootPath string, uri types.DocumentURI, f fileRef, config types.Language) ([]types.Diagnostic, error) {
+	diagnostics := make([]types.Diagnostic, 0)
+	cmdStr := buildLintCommandString(ctx, rootPath, f, config)
+	cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.LintStdin)
+
+	lintOutput, err := runLintCommand(cmd, &config)
+	if h.loglevel >= 3 {
+		h.logger.Println(cmdStr+":", string(lintOutput))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	efms, err := buildErrorformats(config.LintFormats)
+	if err != nil {
+		return nil, err
+	}
+
+	efmsScanner := efms.NewScanner(bytes.NewReader(lintOutput))
+	for efmsScanner.Scan() {
+		entry := efmsScanner.Entry()
+		if !entry.Valid {
 			continue
 		}
 
-		efms, err := buildErrorformats(config.LintFormats)
-		if err != nil {
-			return nil, err
+		entry.Filename = replaceStdinInEntryFilename(entry.Filename, &config, f.NormalizedFilename)
+		if !isEntryForRequestedURI(rootPath, uri, entry) {
+			// entry for a different file, skip
+			continue
 		}
 
-		efmsScanner := efms.NewScanner(bytes.NewReader(lintOutput))
-		for efmsScanner.Scan() {
-			entry := efmsScanner.Entry()
-			if !entry.Valid {
-				continue
-			}
-
-			entry.Filename = replaceStdinInEntryFilename(entry.Filename, &config, f.NormalizedFilename)
-			if !isEntryForRequestedURI(rootPath, uri, entry) {
-				// entry for a different file, skip
-				continue
-			}
-
-			diagnostic := parseEfmEntryToDiagnostic(entry, &config, f)
-			diagnostics = append(diagnostics, diagnostic)
-		}
+		diagnostic := parseEfmEntryToDiagnostic(entry, config, f)
+		diagnostics = append(diagnostics, diagnostic)
 	}
 
 	return diagnostics, nil
@@ -187,7 +223,7 @@ func buildErrorformats(configFormats []string) (*errorformat.Errorformat, error)
 	return efms, nil
 }
 
-func buildLintCommandString(ctx context.Context, rootPath string, f *fileRef, config types.Language) string {
+func buildLintCommandString(ctx context.Context, rootPath string, f fileRef, config types.Language) string {
 	command := config.LintCommand
 	if !config.LintStdin && !strings.Contains(command, inputPlaceholder) {
 		command = command + " " + inputPlaceholder
@@ -230,7 +266,7 @@ func isEntryForRequestedURI(rootPath string, uri types.DocumentURI, entry *error
 	return comparePaths(string(diagURI), string(uri))
 }
 
-func parseEfmEntryToDiagnostic(entry *errorformat.Entry, config *types.Language, f *fileRef) types.Diagnostic {
+func parseEfmEntryToDiagnostic(entry *errorformat.Entry, config types.Language, f fileRef) types.Diagnostic {
 	// vast majority of linters report 1-based lines and columns, but lsp requires 0-based
 	// BUG: LintOffset should be added, not subtracted. But to keep backwards compatibility let's leave this bug here
 	lineStart := max(entry.Lnum-1-config.LintOffset, 0)
@@ -275,14 +311,14 @@ func (h *LangHandler) logUnsupportedLint(langID string) {
 	}
 }
 
-func getLintSource(config *types.Language) *string {
+func getLintSource(config types.Language) *string {
 	if config.LintSource != "" {
 		return &config.LintSource
 	}
 	return nil
 }
 
-func getLintMessagePrefix(config *types.Language) string {
+func getLintMessagePrefix(config types.Language) string {
 	var prefix string
 	if config.Prefix != "" {
 		prefix = fmt.Sprintf("[%s] ", config.Prefix)

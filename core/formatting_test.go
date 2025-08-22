@@ -83,7 +83,7 @@ func TestRunFormattingCommand_WithStdin(t *testing.T) {
 	tmpDir := t.TempDir()
 	cmdStr, err := buildFormatCommandString(tmpDir, &f, nil, nil, cfg)
 	assert.NoError(t, err)
-	cmd := buildExecCmd(t.Context(), cmdStr, tmpDir, &f, cfg, cfg.FormatStdin)
+	cmd := buildExecCmd(t.Context(), cmdStr, tmpDir, f, cfg, cfg.FormatStdin)
 
 	out, err := runFormattingCommand(cmd)
 
