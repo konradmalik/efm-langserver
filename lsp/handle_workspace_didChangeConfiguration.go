@@ -18,5 +18,6 @@ func (h *LspHandler) HandleWorkspaceDidChangeConfiguration(_ context.Context, _ 
 		return nil, err
 	}
 
-	return h.langHandler.UpdateConfiguration(&params.Settings)
+	h.UpdateConfiguration(&params.Settings)
+	return nil, nil
 }

@@ -43,7 +43,7 @@ func (h *LangHandler) RunAllLintersWithNotifier(ctx context.Context, uri types.D
 
 	err := h.runAllLinters(ctx, uri, eventType, diagnosticsOut, errorsOut)
 	if err != nil {
-		h.Logger.Println(err)
+		h.logger.Println(err)
 		notifier.LogMessage(ctx, types.LogError, err.Error())
 	}
 
@@ -74,7 +74,7 @@ func (h *LangHandler) runAllLinters(
 			diagnostics, err := h.lintDocument(ctx, rootPath, uri, *f, config)
 			if err != nil {
 				errorsOut <- err
-				h.Logger.Println(err)
+				h.logger.Println(err)
 				return
 			}
 
@@ -96,8 +96,8 @@ func (h *LangHandler) lintDocument(ctx context.Context, rootPath string, uri typ
 	cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.LintStdin)
 
 	lintOutput, err := runLintCommand(cmd, &config)
-	if h.Loglevel >= 3 {
-		h.Logger.Println(cmdStr+":", string(lintOutput))
+	if h.logLevel >= 3 {
+		h.logger.Println(cmdStr+":", string(lintOutput))
 	}
 	if err != nil {
 		return nil, err
@@ -277,8 +277,8 @@ func parseEfmEntryToDiagnostic(entry *errorformat.Entry, config types.Language, 
 }
 
 func (h *LangHandler) logUnsupportedLint(langID string) {
-	if h.Loglevel >= 2 {
-		h.Logger.Printf("lint for LanguageID not supported: %v", langID)
+	if h.logLevel >= 2 {
+		h.logger.Printf("lint for LanguageID not supported: %v", langID)
 	}
 }
 

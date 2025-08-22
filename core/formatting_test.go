@@ -104,8 +104,8 @@ func TestRangeFormatting_Success(t *testing.T) {
 		configs: map[string][]types.Language{
 			"go": {{FormatCommand: "cat", RequireMarker: false}},
 		},
-		Logger:   log.New(log.Writer(), "", log.LstdFlags),
-		Loglevel: 3,
+		logger:   log.New(log.Writer(), "", log.LstdFlags),
+		logLevel: 3,
 	}
 	edits, err := h.RangeFormatting(types.DocumentURI("file://"+testfile), nil, nil)
 	assert.NoError(t, err)
@@ -118,7 +118,7 @@ func TestRangeFormatting_RequireRootMatcher(t *testing.T) {
 	uri := ParseLocalFileToURI(filepath)
 
 	h := &LangHandler{
-		Logger:   log.New(log.Writer(), "", log.LstdFlags),
+		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			"vim": {

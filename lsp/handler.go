@@ -3,6 +3,7 @@ package lsp
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -13,15 +14,33 @@ import (
 )
 
 type LspHandler struct {
-	langHandler *core.LangHandler
-	formatMu    sync.Mutex
-	lintMu      sync.Mutex
-	lintTimer   *time.Timer
-	formatTimer *time.Timer
+	langHandler    *core.LangHandler
+	formatMu       sync.Mutex
+	lintMu         sync.Mutex
+	lintTimer      *time.Timer
+	lintDebounce   time.Duration
+	formatTimer    *time.Timer
+	formatDebounce time.Duration
+	logLevel       int
+	logger         *log.Logger
 }
 
-func NewHandler(langHandler *core.LangHandler) *LspHandler {
-	return &LspHandler{langHandler: langHandler}
+func NewHandler(logger *log.Logger, langHandler *core.LangHandler) *LspHandler {
+	return &LspHandler{logger: logger, langHandler: langHandler}
+}
+
+func (h *LspHandler) UpdateConfiguration(config *types.Config) {
+	if config.LogLevel > 0 {
+		h.logLevel = config.LogLevel
+	}
+	if config.LintDebounce > 0 {
+		h.lintDebounce = config.LintDebounce
+	}
+	if config.FormatDebounce > 0 {
+		h.formatDebounce = config.FormatDebounce
+	}
+
+	h.langHandler.UpdateConfiguration(config)
 }
 
 func (h *LspHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result any, err error) {
@@ -53,14 +72,14 @@ func (h *LspHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 func (h *LspHandler) Formatting(uri types.DocumentURI, rng *types.Range, opt types.FormattingOptions) ([]types.TextEdit, error) {
 	if h.formatTimer != nil {
-		if h.langHandler.Loglevel >= 4 {
-			h.langHandler.Logger.Printf("format debounced: %v", h.langHandler.FormatDebounce)
+		if h.logLevel >= 4 {
+			h.logger.Printf("format debounced: %v", h.formatDebounce)
 		}
 		return []types.TextEdit{}, nil
 	}
 
 	h.formatMu.Lock()
-	h.formatTimer = time.AfterFunc(h.langHandler.FormatDebounce, func() {
+	h.formatTimer = time.AfterFunc(h.formatDebounce, func() {
 		h.formatMu.Lock()
 		h.formatTimer = nil
 		h.formatMu.Unlock()
@@ -73,14 +92,14 @@ var running = make(map[types.DocumentURI]context.CancelFunc)
 
 func (h *LspHandler) ScheduleLinting(notifier LspNotifier, uri types.DocumentURI, eventType types.EventType) {
 	if h.lintTimer != nil {
-		h.lintTimer.Reset(h.langHandler.LintDebounce)
-		if h.langHandler.Loglevel >= 4 {
-			h.langHandler.Logger.Printf("lint debounced: %v", h.langHandler.LintDebounce)
+		h.lintTimer.Reset(h.lintDebounce)
+		if h.logLevel >= 4 {
+			h.logger.Printf("lint debounced: %v", h.lintDebounce)
 		}
 		return
 	}
 	h.lintMu.Lock()
-	h.lintTimer = time.AfterFunc(h.langHandler.LintDebounce, func() {
+	h.lintTimer = time.AfterFunc(h.lintDebounce, func() {
 		h.lintTimer = nil
 
 		h.lintMu.Lock()

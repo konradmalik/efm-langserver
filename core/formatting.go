@@ -33,19 +33,19 @@ func (h *LangHandler) RangeFormatting(uri types.DocumentURI, rng *types.Range, o
 		rootPath := h.findRootPath(f.NormalizedFilename, config)
 		cmdStr, err := buildFormatCommandString(rootPath, f, options, rng, config)
 		if err != nil {
-			h.Logger.Println("command build error:", err)
+			h.logger.Println("command build error:", err)
 			continue
 		}
 
 		cmd := buildExecCmd(context.Background(), cmdStr, rootPath, *f, config, config.FormatStdin)
 		out, err := runFormattingCommand(cmd)
 
-		if h.Loglevel >= 3 {
-			h.Logger.Println(cmdStr+":", string(out))
+		if h.logLevel >= 3 {
+			h.logger.Println(cmdStr+":", string(out))
 		}
 
 		if err != nil {
-			h.Logger.Println("formatting error:", err)
+			h.logger.Println("formatting error:", err)
 			continue
 		}
 
@@ -57,8 +57,8 @@ func (h *LangHandler) RangeFormatting(uri types.DocumentURI, rng *types.Range, o
 		return nil, fmt.Errorf("format for LanguageID not supported: %v", f.LanguageID)
 	}
 
-	if h.Loglevel >= 3 {
-		h.Logger.Println("format succeeded")
+	if h.logLevel >= 3 {
+		h.logger.Println("format succeeded")
 	}
 	return ComputeEdits(uri, originalText, formattedText)
 }
@@ -151,8 +151,8 @@ func runFormattingCommand(cmd *exec.Cmd) (string, error) {
 }
 
 func (h *LangHandler) logUnsupportedFormat(langID string) {
-	if h.Loglevel >= 2 {
-		h.Logger.Printf("format for LanguageID not supported: %v", langID)
+	if h.logLevel >= 2 {
+		h.logger.Printf("format for LanguageID not supported: %v", langID)
 	}
 }
 

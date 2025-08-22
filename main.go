@@ -72,7 +72,7 @@ func main() {
 	}
 
 	internalHandler := core.NewHandler(logger, config)
-	handler := lsp.NewHandler(internalHandler)
+	handler := lsp.NewHandler(logger, internalHandler)
 	<-jsonrpc2.NewConn(
 		context.Background(),
 		jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}),
@@ -83,15 +83,15 @@ func main() {
 }
 
 func createLogger(logfile string) *log.Logger {
-	if logfile != "" {
-		f, err := os.OpenFile(logfile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0o660)
-		if err != nil {
-			log.Fatal(err)
-		}
-		return log.New(f, "", log.LstdFlags)
-	} else {
+	if logfile == "" {
 		return log.New(os.Stderr, "", log.LstdFlags)
 	}
+
+	f, err := os.OpenFile(logfile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0o660)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return log.New(f, "", log.LstdFlags)
 }
 
 type stdrwc struct{}

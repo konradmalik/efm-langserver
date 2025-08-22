@@ -6,20 +6,17 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/konradmalik/efm-langserver/types"
 )
 
 type LangHandler struct {
-	Loglevel       int
-	Logger         *log.Logger
-	configs        map[string][]types.Language
-	files          map[types.DocumentURI]*fileRef
-	LintDebounce   time.Duration
-	FormatDebounce time.Duration
-	RootPath       string
-	rootMarkers    []string
+	logLevel    int
+	logger      *log.Logger
+	configs     map[string][]types.Language
+	files       map[types.DocumentURI]*fileRef
+	RootPath    string
+	rootMarkers []string
 }
 
 type fileRef struct {
@@ -40,14 +37,11 @@ func NewConfig() *types.Config {
 
 func NewHandler(logger *log.Logger, config *types.Config) *LangHandler {
 	handler := &LangHandler{
-		Loglevel:     config.LogLevel,
-		Logger:       logger,
-		configs:      *config.Languages,
-		files:        make(map[types.DocumentURI]*fileRef),
-		LintDebounce: config.LintDebounce,
-
-		FormatDebounce: config.FormatDebounce,
-		rootMarkers:    *config.RootMarkers,
+		logLevel:    config.LogLevel,
+		logger:      logger,
+		configs:     *config.Languages,
+		files:       make(map[types.DocumentURI]*fileRef),
+		rootMarkers: *config.RootMarkers,
 	}
 	return handler
 }
@@ -90,7 +84,7 @@ func (h *LangHandler) Initialize(params types.InitializeParams) (types.Initializ
 	}, nil
 }
 
-func (h *LangHandler) UpdateConfiguration(config *types.Config) (any, error) {
+func (h *LangHandler) UpdateConfiguration(config *types.Config) {
 	if config.Languages != nil {
 		h.configs = *config.Languages
 	}
@@ -98,19 +92,8 @@ func (h *LangHandler) UpdateConfiguration(config *types.Config) (any, error) {
 		h.rootMarkers = *config.RootMarkers
 	}
 	if config.LogLevel > 0 {
-		h.Loglevel = config.LogLevel
+		h.logLevel = config.LogLevel
 	}
-	if config.LintDebounce > 0 {
-		h.LintDebounce = config.LintDebounce
-	}
-	if config.FormatDebounce > 0 {
-		h.FormatDebounce = config.FormatDebounce
-	}
-	if config.LogLevel > 0 {
-		h.Loglevel = config.LogLevel
-	}
-
-	return nil, nil
 }
 
 func (h *LangHandler) CloseFile(uri types.DocumentURI) error {
