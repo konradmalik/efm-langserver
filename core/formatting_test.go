@@ -1,7 +1,6 @@
 package core
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,15 +76,11 @@ func TestBuildCommand_HandlesPlaceholders(t *testing.T) {
 }
 
 func TestFormatDocument_WithStdin(t *testing.T) {
-	h := &LangHandler{
-		logger: log.New(log.Writer(), "", log.LstdFlags),
-	}
-
 	cfg := types.Language{FormatCommand: "cat -", FormatStdin: true}
 	f := fileRef{Text: "hello text", LanguageID: "go", NormalizedFilename: "file.txt"}
 	tmpDir := t.TempDir()
 
-	out, err := h.formatDocument(t.Context(), tmpDir, f, nil, nil, cfg)
+	out, err := formatDocument(t.Context(), tmpDir, f, nil, nil, cfg)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "hello text", strings.TrimSpace(out))
@@ -104,8 +99,6 @@ func TestRunFormatters_Success(t *testing.T) {
 		configs: map[string][]types.Language{
 			"go": {{FormatCommand: "cat", RequireMarker: false}},
 		},
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
-		logLevel: 3,
 	}
 	edits, err := h.RunAllFormatters(t.Context(), types.DocumentURI("file://"+testfile), nil, nil)
 	assert.NoError(t, err)
@@ -118,7 +111,6 @@ func TestRunFormatters_RequireRootMatcher(t *testing.T) {
 	uri := ParseLocalFileToURI(filepath)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			"vim": {

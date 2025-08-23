@@ -3,13 +3,13 @@ package lsp
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
 
 	"github.com/konradmalik/efm-langserver/core"
+	"github.com/konradmalik/efm-langserver/logs"
 	"github.com/konradmalik/efm-langserver/types"
 )
 
@@ -21,18 +21,13 @@ type LspHandler struct {
 	lintDebounce   time.Duration
 	formatTimer    *time.Timer
 	formatDebounce time.Duration
-	logLevel       int
-	logger         *log.Logger
 }
 
-func NewHandler(logger *log.Logger, langHandler *core.LangHandler) *LspHandler {
-	return &LspHandler{logger: logger, langHandler: langHandler}
+func NewHandler(langHandler *core.LangHandler) *LspHandler {
+	return &LspHandler{langHandler: langHandler}
 }
 
 func (h *LspHandler) UpdateConfiguration(config *types.Config) {
-	if config.LogLevel > 0 {
-		h.logLevel = config.LogLevel
-	}
 	if config.LintDebounce > 0 {
 		h.lintDebounce = config.LintDebounce
 	}
@@ -72,9 +67,7 @@ func (h *LspHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 func (h *LspHandler) Formatting(ctx context.Context, uri types.DocumentURI, rng *types.Range, opt types.FormattingOptions) ([]types.TextEdit, error) {
 	if h.formatTimer != nil {
-		if h.logLevel >= 4 {
-			h.logger.Printf("format debounced: %v", h.formatDebounce)
-		}
+		logs.Log.Logf(logs.Debug, "format debounced: %v", h.formatDebounce)
 		return []types.TextEdit{}, nil
 	}
 
@@ -93,9 +86,7 @@ var running = make(map[types.DocumentURI]context.CancelFunc)
 func (h *LspHandler) ScheduleLinting(notifier LspNotifier, uri types.DocumentURI, eventType types.EventType) {
 	if h.lintTimer != nil {
 		h.lintTimer.Reset(h.lintDebounce)
-		if h.logLevel >= 4 {
-			h.logger.Printf("lint debounced: %v", h.lintDebounce)
-		}
+		logs.Log.Logf(logs.Debug, "lint debounced: %v", h.formatDebounce)
 		return
 	}
 	h.lintMu.Lock()

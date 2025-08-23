@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -17,7 +16,6 @@ import (
 
 func TestLintNoLinter(t *testing.T) {
 	h := &LangHandler{
-		logger:  log.New(log.Writer(), "", log.LstdFlags),
 		configs: map[string][]types.Language{},
 		files: map[types.DocumentURI]*fileRef{
 			types.DocumentURI("file:///foo"): {},
@@ -30,7 +28,6 @@ func TestLintNoLinter(t *testing.T) {
 
 func TestLintNoFileMatched(t *testing.T) {
 	h := &LangHandler{
-		logger:  log.New(log.Writer(), "", log.LstdFlags),
 		configs: map[string][]types.Language{},
 		files: map[types.DocumentURI]*fileRef{
 			types.DocumentURI("file:///foo"): {},
@@ -47,7 +44,6 @@ func TestLintFileMatched(t *testing.T) {
 	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			"vim": {
@@ -83,7 +79,6 @@ func TestLintFileMatchedWildcard(t *testing.T) {
 	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			types.Wildcard: {
@@ -121,7 +116,6 @@ func TestLintOffsetColumnsZero(t *testing.T) {
 	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			types.Wildcard: {
@@ -158,7 +152,6 @@ func TestLintOffsetColumnsNoOffset(t *testing.T) {
 	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			types.Wildcard: {
@@ -194,7 +187,6 @@ func TestLintOffsetColumnsNonZero(t *testing.T) {
 	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			types.Wildcard: {
@@ -234,7 +226,6 @@ func TestLintCategoryMap(t *testing.T) {
 	formats := []string{"%f:%l:%c:%t:%m"}
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			types.Wildcard: {
@@ -270,7 +261,6 @@ func TestLintRequireRootMarker(t *testing.T) {
 	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			"vim": {
@@ -306,7 +296,6 @@ func TestLintSingleEntry(t *testing.T) {
 	uri2 := ParseLocalFileToURI(file2)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			"vim": {
@@ -347,7 +336,6 @@ func TestLintMultipleEntries(t *testing.T) {
 	uri2 := ParseLocalFileToURI(file2)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			"vim": {
@@ -388,7 +376,6 @@ func TestLintNoDiagnostics(t *testing.T) {
 	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			"vim": {
@@ -420,7 +407,6 @@ func TestLintEventTypes(t *testing.T) {
 	uri := ParseLocalFileToURI(file)
 
 	h := &LangHandler{
-		logger:   log.New(log.Writer(), "", log.LstdFlags),
 		RootPath: base,
 		configs: map[string][]types.Language{
 			"vim": {

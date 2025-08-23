@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/konradmalik/efm-langserver/logs"
 	"github.com/konradmalik/efm-langserver/types"
 	"github.com/reviewdog/errorformat"
 )
@@ -43,7 +44,6 @@ func (h *LangHandler) RunAllLintersWithNotifier(ctx context.Context, uri types.D
 
 	err := h.runAllLinters(ctx, uri, eventType, diagnosticsOut, errorsOut)
 	if err != nil {
-		h.logger.Println(err)
 		notifier.LogMessage(ctx, types.LogError, err.Error())
 	}
 
@@ -61,7 +61,7 @@ func (h *LangHandler) runAllLinters(
 
 	configs := getLintConfigsForDocument(f.NormalizedFilename, f.LanguageID, h.configs, eventType)
 	if len(configs) == 0 {
-		h.logUnsupportedLint(f.LanguageID)
+		logs.Log.Logf(logs.Debug, "no matching lint configs for LanguageID: %v", f.LanguageID)
 		return nil
 	}
 
@@ -71,10 +71,10 @@ func (h *LangHandler) runAllLinters(
 		go func() {
 			defer wg.Done()
 			rootPath := h.findRootPath(f.NormalizedFilename, config)
-			diagnostics, err := h.lintDocument(ctx, rootPath, uri, *f, config)
+			diagnostics, err := lintDocument(ctx, rootPath, uri, *f, config)
 			if err != nil {
+				logs.Log.Logln(logs.Error, err.Error())
 				errorsOut <- err
-				h.logger.Println(err)
 				return
 			}
 
@@ -90,15 +90,14 @@ func (h *LangHandler) runAllLinters(
 	return nil
 }
 
-func (h *LangHandler) lintDocument(ctx context.Context, rootPath string, uri types.DocumentURI, f fileRef, config types.Language) ([]types.Diagnostic, error) {
+func lintDocument(ctx context.Context, rootPath string, uri types.DocumentURI, f fileRef, config types.Language) ([]types.Diagnostic, error) {
 	diagnostics := make([]types.Diagnostic, 0)
 	cmdStr := buildLintCommandString(ctx, rootPath, f, config)
 	cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.LintStdin)
 
 	lintOutput, err := runLintCommand(cmd, &config)
-	if h.logLevel >= 3 {
-		h.logger.Println(cmdStr+":", string(lintOutput))
-	}
+	logs.Log.Logln(logs.Info, cmdStr)
+	logs.Log.Logln(logs.Debug, string(lintOutput))
 	if err != nil {
 		return nil, err
 	}
@@ -273,12 +272,6 @@ func parseEfmEntryToDiagnostic(entry *errorformat.Entry, config types.Language, 
 		Message:  getLintMessagePrefix(config) + entry.Text,
 		Severity: getSeverity(entry.Type, config.LintCategoryMap, config.LintSeverity),
 		Source:   getLintSource(config),
-	}
-}
-
-func (h *LangHandler) logUnsupportedLint(langID string) {
-	if h.logLevel >= 2 {
-		h.logger.Printf("lint for LanguageID not supported: %v", langID)
 	}
 }
 

@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,8 +10,6 @@ import (
 )
 
 type LangHandler struct {
-	logLevel    int
-	logger      *log.Logger
 	configs     map[string][]types.Language
 	files       map[types.DocumentURI]*fileRef
 	RootPath    string
@@ -35,10 +32,8 @@ func NewConfig() *types.Config {
 	}
 }
 
-func NewHandler(logger *log.Logger, config *types.Config) *LangHandler {
+func NewHandler(config *types.Config) *LangHandler {
 	handler := &LangHandler{
-		logLevel:    config.LogLevel,
-		logger:      logger,
 		configs:     *config.Languages,
 		files:       make(map[types.DocumentURI]*fileRef),
 		rootMarkers: *config.RootMarkers,
@@ -90,9 +85,6 @@ func (h *LangHandler) UpdateConfiguration(config *types.Config) {
 	}
 	if config.RootMarkers != nil {
 		h.rootMarkers = *config.RootMarkers
-	}
-	if config.LogLevel > 0 {
-		h.logLevel = config.LogLevel
 	}
 }
 

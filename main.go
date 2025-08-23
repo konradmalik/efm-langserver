@@ -4,14 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"runtime"
 
 	"github.com/sourcegraph/jsonrpc2"
 
 	"github.com/konradmalik/efm-langserver/core"
+	"github.com/konradmalik/efm-langserver/logs"
 	"github.com/konradmalik/efm-langserver/lsp"
 )
 
@@ -26,13 +25,11 @@ func main() {
 	var logfile string
 	var loglevel int
 	var showVersion bool
-	var quiet bool
 	var usage bool
 
 	flag.StringVar(&logfile, "logfile", "", "File to save logs into. If provided stderr won't be used anymore.")
-	flag.IntVar(&loglevel, "loglevel", 1, "Set the log level. Max is 5, min is 0.")
+	flag.IntVar(&loglevel, "loglevel", 2, "Set the log level. Max is 3 (debug), min is 0 (error). Higher number logs less. Set <0 for no logs.")
 	flag.BoolVar(&showVersion, "v", false, "Print the version")
-	flag.BoolVar(&quiet, "q", false, "Run quiet")
 	flag.BoolVar(&usage, "h", false, "Show help")
 	flag.Parse()
 
@@ -47,15 +44,8 @@ func main() {
 	}
 
 	config := core.NewConfig()
-	config.LogLevel = loglevel
-
-	if quiet {
-		log.SetOutput(io.Discard)
-	}
-
-	log.Println("efm-langserver: reading on stdin, writing on stdout")
-
-	var connOpt []jsonrpc2.ConnOpt
+	logs.InitializeLogger(logfile, logs.LogLevel(max(loglevel, -1)))
+	logs.Log.Logln(logs.Info, "reading on stdin, writing on stdout")
 
 	var f *os.File
 	defer func() {
@@ -64,34 +54,15 @@ func main() {
 		}
 	}()
 
-	logger := createLogger(logfile)
-	if !quiet && loglevel >= 5 {
-		connOpt = append(connOpt, jsonrpc2.LogMessages(logger))
-	} else {
-		connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(io.Discard, "", 0)))
-	}
-
-	internalHandler := core.NewHandler(logger, config)
-	handler := lsp.NewHandler(logger, internalHandler)
+	internalHandler := core.NewHandler(config)
+	handler := lsp.NewHandler(internalHandler)
 	<-jsonrpc2.NewConn(
 		context.Background(),
 		jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}),
 		jsonrpc2.HandlerWithError(handler.Handle),
-		connOpt...).DisconnectNotify()
+		jsonrpc2.LogMessages(logs.Log)).DisconnectNotify()
 
-	log.Println("efm-langserver: connections closed")
-}
-
-func createLogger(logfile string) *log.Logger {
-	if logfile == "" {
-		return log.New(os.Stderr, "", log.LstdFlags)
-	}
-
-	f, err := os.OpenFile(logfile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0o660)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return log.New(f, "", log.LstdFlags)
+	logs.Log.Logln(logs.Info, "efm-langserver: connections closed")
 }
 
 type stdrwc struct{}

@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/konradmalik/efm-langserver/logs"
 	"github.com/konradmalik/efm-langserver/types"
 )
 
@@ -21,7 +22,7 @@ func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentUR
 
 	configs := getFormatConfigsForDocument(f.NormalizedFilename, f.LanguageID, h.configs)
 	if len(configs) == 0 {
-		h.logUnsupportedFormat(f.LanguageID)
+		logs.Log.Logf(logs.Warn, "no matching format configs for LanguageID: %v", f.LanguageID)
 		return nil, nil
 	}
 
@@ -31,10 +32,10 @@ func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentUR
 
 	for _, config := range configs {
 		rootPath := h.findRootPath(f.NormalizedFilename, config)
-		newText, err := h.formatDocument(ctx, rootPath, *f, rng, options, config)
+		newText, err := formatDocument(ctx, rootPath, *f, rng, options, config)
 
 		if err != nil {
-			h.logger.Println(err)
+			logs.Log.Logln(logs.Error, err.Error())
 			continue
 		}
 
@@ -46,13 +47,11 @@ func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentUR
 		return nil, fmt.Errorf("format for LanguageID not supported: %v", f.LanguageID)
 	}
 
-	if h.logLevel >= 3 {
-		h.logger.Println("format succeeded")
-	}
+	logs.Log.Logln(logs.Info, "format succeeded")
 	return ComputeEdits(uri, originalText, formattedText)
 }
 
-func (h *LangHandler) formatDocument(ctx context.Context, rootPath string, f fileRef, rng *types.Range, options types.FormattingOptions, config types.Language) (string, error) {
+func formatDocument(ctx context.Context, rootPath string, f fileRef, rng *types.Range, options types.FormattingOptions, config types.Language) (string, error) {
 	cmdStr, err := buildFormatCommandString(rootPath, &f, options, rng, config)
 	if err != nil {
 		return "", fmt.Errorf("command build error: %s", err)
@@ -61,9 +60,8 @@ func (h *LangHandler) formatDocument(ctx context.Context, rootPath string, f fil
 	cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.FormatStdin)
 	out, err := runFormattingCommand(cmd)
 
-	if h.logLevel >= 3 {
-		h.logger.Println(cmdStr+":", string(out))
-	}
+	logs.Log.Logln(logs.Info, cmdStr)
+	logs.Log.Logln(logs.Debug, out)
 
 	if err != nil {
 		return "", fmt.Errorf("formatting error: %s", err)
@@ -157,12 +155,6 @@ func runFormattingCommand(cmd *exec.Cmd) (string, error) {
 		return "", fmt.Errorf("%s: %s", strings.Join(cmd.Args, " "), buf.String())
 	}
 	return string(b), nil
-}
-
-func (h *LangHandler) logUnsupportedFormat(langID string) {
-	if h.logLevel >= 2 {
-		h.logger.Printf("format for LanguageID not supported: %v", langID)
-	}
 }
 
 func getFormatConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language) []types.Language {
