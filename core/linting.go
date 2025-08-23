@@ -22,33 +22,36 @@ type notifier interface {
 }
 
 func (h *LangHandler) RunAllLintersWithNotifier(ctx context.Context, uri types.DocumentURI, eventType types.EventType, notifier notifier) {
-	diagnosticsOut := make(chan types.PublishDiagnosticsParams)
-	errorsOut := make(chan error)
-
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for err := range errorsOut {
+
+	func() {
+		diagnosticsOut := make(chan types.PublishDiagnosticsParams)
+		errorsOut := make(chan error)
+		defer close(diagnosticsOut)
+		defer close(errorsOut)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for err := range errorsOut {
+				notifier.LogMessage(ctx, types.LogError, err.Error())
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for diag := range diagnosticsOut {
+				notifier.PublishDiagnostics(ctx, diag)
+			}
+		}()
+
+		err := h.runAllLinters(ctx, uri, eventType, diagnosticsOut, errorsOut)
+		if err != nil {
 			notifier.LogMessage(ctx, types.LogError, err.Error())
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for diag := range diagnosticsOut {
-			notifier.PublishDiagnostics(ctx, diag)
-		}
-	}()
-
-	err := h.runAllLinters(ctx, uri, eventType, diagnosticsOut, errorsOut)
-	if err != nil {
-		notifier.LogMessage(ctx, types.LogError, err.Error())
-	}
-
-	close(diagnosticsOut)
-	close(errorsOut)
 	wg.Wait()
 }
 
