@@ -71,7 +71,7 @@ func (h *LangHandler) runAllLinters(
 		go func() {
 			defer wg.Done()
 			rootPath := h.findRootPath(f.NormalizedFilename, config)
-			diagnostics, err := lintDocument(ctx, rootPath, uri, *f, config)
+			diagnostics, err := lintDocument(ctx, rootPath, *f, config)
 			if err != nil {
 				logs.Log.Logln(logs.Error, err.Error())
 				errorsOut <- err
@@ -90,7 +90,7 @@ func (h *LangHandler) runAllLinters(
 	return nil
 }
 
-func lintDocument(ctx context.Context, rootPath string, uri types.DocumentURI, f fileRef, config types.Language) ([]types.Diagnostic, error) {
+func lintDocument(ctx context.Context, rootPath string, f fileRef, config types.Language) ([]types.Diagnostic, error) {
 	diagnostics := make([]types.Diagnostic, 0)
 	cmdStr := buildLintCommandString(ctx, rootPath, f, config)
 	cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.LintStdin)
@@ -115,7 +115,7 @@ func lintDocument(ctx context.Context, rootPath string, uri types.DocumentURI, f
 		}
 
 		entry.Filename = replaceStdinInEntryFilename(entry.Filename, &config, f.NormalizedFilename)
-		if !isEntryForRequestedURI(rootPath, uri, entry) {
+		if !isEntryForRequestedURI(rootPath, f.Uri, entry) {
 			// entry for a different file, skip
 			continue
 		}

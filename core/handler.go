@@ -21,6 +21,7 @@ type fileRef struct {
 	NormalizedFilename string
 	LanguageID         string
 	Text               string
+	Uri                types.DocumentURI
 }
 
 func NewConfig() *types.Config {
@@ -104,6 +105,7 @@ func (h *LangHandler) OpenFile(uri types.DocumentURI, languageID string, version
 		LanguageID:         languageID,
 		Version:            version,
 		NormalizedFilename: fname,
+		Uri:                uri,
 	}
 	h.files[uri] = f
 

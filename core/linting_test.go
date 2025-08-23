@@ -59,6 +59,7 @@ func TestLintFileMatched(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 		},
 	}
@@ -94,6 +95,7 @@ func TestLintFileMatchedWildcard(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 		},
 	}
@@ -133,6 +135,7 @@ func TestLintOffsetColumnsZero(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 		},
 	}
@@ -168,6 +171,7 @@ func TestLintOffsetColumnsNoOffset(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 		},
 	}
@@ -204,6 +208,7 @@ func TestLintOffsetColumnsNonZero(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 		},
 	}
@@ -243,6 +248,7 @@ func TestLintCategoryMap(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 		},
 	}
@@ -278,6 +284,7 @@ func TestLintRequireRootMarker(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 		},
 	}
@@ -311,11 +318,13 @@ func TestLintSingleEntry(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 			uri2: {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file2,
+				Uri:                uri2,
 			},
 		},
 	}
@@ -351,11 +360,13 @@ func TestLintMultipleEntries(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 			uri2: {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file2,
+				Uri:                uri2,
 			},
 		},
 	}
@@ -391,6 +402,7 @@ func TestLintNoDiagnostics(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 		},
 	}
@@ -422,6 +434,7 @@ func TestLintEventTypes(t *testing.T) {
 				LanguageID:         "vim",
 				Text:               "scriptencoding utf-8\nabnormal!\n",
 				NormalizedFilename: file,
+				Uri:                uri,
 			},
 		},
 	}
