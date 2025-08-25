@@ -22,7 +22,7 @@ func TestLintNoLinter(t *testing.T) {
 		},
 	}
 
-	_, err := h.runAllLintersSync(t, "file:///foo")
+	_, err := h.getAllDiagnosticsForUri(t, "file:///foo")
 	assert.NoError(t, err)
 }
 
@@ -34,7 +34,7 @@ func TestLintNoFileMatched(t *testing.T) {
 		},
 	}
 
-	_, err := h.runAllLintersSync(t, "file:///bar")
+	_, err := h.getAllDiagnosticsForUri(t, "file:///bar")
 	assert.Error(t, err)
 }
 
@@ -64,7 +64,7 @@ func TestLintFileMatched(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri)
+	d, err := h.getAllDiagnosticsForUri(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -72,6 +72,40 @@ func TestLintFileMatched(t *testing.T) {
 	assert.Equal(t, d[0].Range.Start.Character, 0)
 	assert.Equal(t, d[0].Severity, types.DiagnosticSeverity(1))
 	assert.Equal(t, d[0].Message, "No it is normal!")
+}
+
+func TestDiagnosticsResetOnEachRun(t *testing.T) {
+	base, _ := os.Getwd()
+	file := filepath.Join(base, "foo")
+	uri := ParseLocalFileToURI(file)
+
+	h := &LangHandler{
+		RootPath: base,
+		configs: map[string][]types.Language{
+			"vim": {
+				{
+					LintCommand:        `echo ` + file + `:2:No it is normal!`,
+					LintIgnoreExitCode: true,
+					LintStdin:          true,
+				},
+			},
+		},
+		files: map[types.DocumentURI]*fileRef{
+			uri: {
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
+				Uri:                uri,
+			},
+		},
+	}
+
+	pd, err := h.getAllPublishDiagnosticsParamsForUriWithEvent(t, uri, types.EventTypeSave)
+	assert.NoError(t, err)
+
+	assert.Len(t, pd, 2)
+	assert.Empty(t, pd[0].Diagnostics)
+	assert.NotEmpty(t, pd[1].Diagnostics)
 }
 
 func TestLintFileMatchedWildcard(t *testing.T) {
@@ -100,7 +134,7 @@ func TestLintFileMatchedWildcard(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri)
+	d, err := h.getAllDiagnosticsForUri(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -140,7 +174,7 @@ func TestLintOffsetColumnsZero(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri)
+	d, err := h.getAllDiagnosticsForUri(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -176,7 +210,7 @@ func TestLintOffsetColumnsNoOffset(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri)
+	d, err := h.getAllDiagnosticsForUri(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -213,7 +247,7 @@ func TestLintOffsetColumnsNonZero(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri)
+	d, err := h.getAllDiagnosticsForUri(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -253,7 +287,7 @@ func TestLintCategoryMap(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri)
+	d, err := h.getAllDiagnosticsForUri(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -289,7 +323,7 @@ func TestLintRequireRootMarker(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri)
+	d, err := h.getAllDiagnosticsForUri(t, uri)
 	assert.NoError(t, err)
 
 	assert.Empty(t, d)
@@ -329,7 +363,7 @@ func TestLintSingleEntry(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri)
+	d, err := h.getAllDiagnosticsForUri(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -371,7 +405,7 @@ func TestLintMultipleEntries(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri2)
+	d, err := h.getAllDiagnosticsForUri(t, uri2)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 2)
@@ -407,7 +441,7 @@ func TestLintNoDiagnostics(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersSync(t, uri)
+	d, err := h.getAllDiagnosticsForUri(t, uri)
 	assert.NoError(t, err)
 
 	assert.Empty(t, d)
@@ -490,7 +524,7 @@ func TestLintEventTypes(t *testing.T) {
 			h.configs["vim"][0].LintAfterOpen = boolPtr(tt.lintAfterOpen)
 			h.configs["vim"][0].LintOnChange = boolPtr(tt.lintOnChange)
 			h.configs["vim"][0].LintOnSave = boolPtr(tt.lintOnSave)
-			d, err := h.runAllLintersSyncWithEvent(t, uri, tt.event)
+			d, err := h.getAllDiagnosticsForUriWithEvent(t, uri, tt.event)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectMessages, len(d))
 		})
@@ -798,14 +832,23 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 	}
 }
 
-func (h *LangHandler) runAllLintersSync(t *testing.T, uri types.DocumentURI) ([]types.Diagnostic, error) {
-	return h.runAllLintersSyncWithEvent(t, uri, types.EventTypeChange)
+func (h *LangHandler) getAllDiagnosticsForUri(t *testing.T, uri types.DocumentURI) ([]types.Diagnostic, error) {
+	return h.getAllDiagnosticsForUriWithEvent(t, uri, types.EventTypeChange)
 }
 
-func (h *LangHandler) runAllLintersSyncWithEvent(t *testing.T, uri types.DocumentURI, event types.EventType) ([]types.Diagnostic, error) {
+func (h *LangHandler) getAllDiagnosticsForUriWithEvent(t *testing.T, uri types.DocumentURI, event types.EventType) ([]types.Diagnostic, error) {
+	params, err := h.getAllPublishDiagnosticsParamsForUriWithEvent(t, uri, event)
+	diagnostics := make([]types.Diagnostic, 0)
+	for _, p := range params {
+		diagnostics = append(diagnostics, p.Diagnostics...)
+	}
+	return diagnostics, err
+}
+
+func (h *LangHandler) getAllPublishDiagnosticsParamsForUriWithEvent(t *testing.T, uri types.DocumentURI, event types.EventType) ([]types.PublishDiagnosticsParams, error) {
 	var wg sync.WaitGroup
 
-	diagnosticsOut := make([]types.Diagnostic, 0)
+	diagnosticsOut := make([]types.PublishDiagnosticsParams, 0)
 	errorsOut := make([]string, 0)
 
 	func() {
@@ -826,7 +869,7 @@ func (h *LangHandler) runAllLintersSyncWithEvent(t *testing.T, uri types.Documen
 		go func() {
 			defer wg.Done()
 			for d := range diagnosticsChan {
-				diagnosticsOut = append(diagnosticsOut, d.Diagnostics...)
+				diagnosticsOut = append(diagnosticsOut, d)
 			}
 		}()
 

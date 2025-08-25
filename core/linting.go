@@ -29,6 +29,13 @@ func (h *LangHandler) RunAllLinters(
 		return nil
 	}
 
+	// to reset existing
+	diagnosticsOut <- types.PublishDiagnosticsParams{
+		URI:         uri,
+		Diagnostics: make([]types.Diagnostic, 0),
+		Version:     f.Version,
+	}
+
 	var wg sync.WaitGroup
 	for _, config := range configs {
 		wg.Add(1)
