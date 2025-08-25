@@ -103,7 +103,29 @@ func (h *LspHandler) ScheduleLinting(notifier LspNotifier, uri types.DocumentURI
 		running[uri] = cancel
 		h.lintMu.Unlock()
 
-		go h.langHandler.RunAllLintersWithNotifier(ctx, uri, eventType, &notifier)
+		func() {
+			diagnostics := make(chan types.PublishDiagnosticsParams)
+			errors := make(chan error)
+			defer close(diagnostics)
+			defer close(errors)
+
+			go func() {
+				for d := range diagnostics {
+					notifier.PublishDiagnostics(ctx, d)
+				}
+			}()
+
+			go func() {
+				for e := range errors {
+					notifier.LogMessage(ctx, types.LogError, e.Error())
+				}
+			}()
+
+			err := h.langHandler.RunAllLinters(ctx, uri, eventType, diagnostics, errors)
+			if err != nil {
+				notifier.LogMessage(ctx, types.LogError, err.Error())
+			}
+		}()
 	})
 	h.lintMu.Unlock()
 }

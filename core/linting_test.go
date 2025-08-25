@@ -1,12 +1,12 @@
 package core
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/konradmalik/efm-langserver/types"
@@ -22,7 +22,7 @@ func TestLintNoLinter(t *testing.T) {
 		},
 	}
 
-	_, err := h.runAllLintersWithMockedNotifier(t, "file:///foo")
+	_, err := h.runAllLintersSync(t, "file:///foo")
 	assert.NoError(t, err)
 }
 
@@ -34,7 +34,7 @@ func TestLintNoFileMatched(t *testing.T) {
 		},
 	}
 
-	_, err := h.runAllLintersWithMockedNotifier(t, "file:///bar")
+	_, err := h.runAllLintersSync(t, "file:///bar")
 	assert.Error(t, err)
 }
 
@@ -64,7 +64,7 @@ func TestLintFileMatched(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri)
+	d, err := h.runAllLintersSync(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -100,7 +100,7 @@ func TestLintFileMatchedWildcard(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri)
+	d, err := h.runAllLintersSync(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -140,7 +140,7 @@ func TestLintOffsetColumnsZero(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri)
+	d, err := h.runAllLintersSync(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -176,7 +176,7 @@ func TestLintOffsetColumnsNoOffset(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri)
+	d, err := h.runAllLintersSync(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -213,7 +213,7 @@ func TestLintOffsetColumnsNonZero(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri)
+	d, err := h.runAllLintersSync(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -253,7 +253,7 @@ func TestLintCategoryMap(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri)
+	d, err := h.runAllLintersSync(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -289,7 +289,7 @@ func TestLintRequireRootMarker(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri)
+	d, err := h.runAllLintersSync(t, uri)
 	assert.NoError(t, err)
 
 	assert.Empty(t, d)
@@ -329,7 +329,7 @@ func TestLintSingleEntry(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri)
+	d, err := h.runAllLintersSync(t, uri)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 1)
@@ -371,7 +371,7 @@ func TestLintMultipleEntries(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri2)
+	d, err := h.runAllLintersSync(t, uri2)
 	assert.NoError(t, err)
 
 	assert.Len(t, d, 2)
@@ -407,7 +407,7 @@ func TestLintNoDiagnostics(t *testing.T) {
 		},
 	}
 
-	d, err := h.runAllLintersWithMockedNotifier(t, uri)
+	d, err := h.runAllLintersSync(t, uri)
 	assert.NoError(t, err)
 
 	assert.Empty(t, d)
@@ -490,7 +490,7 @@ func TestLintEventTypes(t *testing.T) {
 			h.configs["vim"][0].LintAfterOpen = boolPtr(tt.lintAfterOpen)
 			h.configs["vim"][0].LintOnChange = boolPtr(tt.lintOnChange)
 			h.configs["vim"][0].LintOnSave = boolPtr(tt.lintOnSave)
-			d, err := h.runAllLintersWithMockedNotifierWithEvent(t, uri, tt.event)
+			d, err := h.runAllLintersSyncWithEvent(t, uri, tt.event)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectMessages, len(d))
 		})
@@ -798,28 +798,47 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 	}
 }
 
-type testNotifier struct {
-	Errors      []string
-	Diagnostics []types.Diagnostic
+func (h *LangHandler) runAllLintersSync(t *testing.T, uri types.DocumentURI) ([]types.Diagnostic, error) {
+	return h.runAllLintersSyncWithEvent(t, uri, types.EventTypeChange)
 }
 
-func (n *testNotifier) LogMessage(ctx context.Context, typ types.MessageType, message string) {
-	n.Errors = append(n.Errors, message)
-}
+func (h *LangHandler) runAllLintersSyncWithEvent(t *testing.T, uri types.DocumentURI, event types.EventType) ([]types.Diagnostic, error) {
+	var wg sync.WaitGroup
 
-func (n *testNotifier) PublishDiagnostics(ctx context.Context, params types.PublishDiagnosticsParams) {
-	n.Diagnostics = append(n.Diagnostics, params.Diagnostics...)
-}
+	diagnosticsOut := make([]types.Diagnostic, 0)
+	errorsOut := make([]string, 0)
 
-func (h *LangHandler) runAllLintersWithMockedNotifier(t *testing.T, uri types.DocumentURI) ([]types.Diagnostic, error) {
-	return h.runAllLintersWithMockedNotifierWithEvent(t, uri, types.EventTypeChange)
-}
+	func() {
+		diagnosticsChan := make(chan types.PublishDiagnosticsParams)
+		errorsChan := make(chan error)
+		defer close(diagnosticsChan)
+		defer close(errorsChan)
 
-func (h *LangHandler) runAllLintersWithMockedNotifierWithEvent(t *testing.T, uri types.DocumentURI, event types.EventType) ([]types.Diagnostic, error) {
-	notifier := testNotifier{}
-	h.RunAllLintersWithNotifier(t.Context(), uri, event, &notifier)
-	if len(notifier.Errors) != 0 {
-		return nil, fmt.Errorf("%s", strings.Join(notifier.Errors, ";"))
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for e := range errorsChan {
+				errorsOut = append(errorsOut, e.Error())
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for d := range diagnosticsChan {
+				diagnosticsOut = append(diagnosticsOut, d.Diagnostics...)
+			}
+		}()
+
+		err := h.RunAllLinters(t.Context(), uri, event, diagnosticsChan, errorsChan)
+		if err != nil {
+			errorsOut = append(errorsOut, err.Error())
+		}
+	}()
+
+	wg.Wait()
+	if len(errorsOut) != 0 {
+		return nil, fmt.Errorf("%s", strings.Join(errorsOut, ";"))
 	}
-	return notifier.Diagnostics, nil
+	return diagnosticsOut, nil
 }

@@ -16,46 +16,7 @@ import (
 
 var defaultLintFormats = []string{"%f:%l:%m", "%f:%l:%c:%m"}
 
-type notifier interface {
-	PublishDiagnostics(ctx context.Context, params types.PublishDiagnosticsParams)
-	LogMessage(ctx context.Context, typ types.MessageType, message string)
-}
-
-func (h *LangHandler) RunAllLintersWithNotifier(ctx context.Context, uri types.DocumentURI, eventType types.EventType, notifier notifier) {
-	var wg sync.WaitGroup
-
-	func() {
-		diagnosticsOut := make(chan types.PublishDiagnosticsParams)
-		errorsOut := make(chan error)
-		defer close(diagnosticsOut)
-		defer close(errorsOut)
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for err := range errorsOut {
-				notifier.LogMessage(ctx, types.LogError, err.Error())
-			}
-		}()
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for diag := range diagnosticsOut {
-				notifier.PublishDiagnostics(ctx, diag)
-			}
-		}()
-
-		err := h.runAllLinters(ctx, uri, eventType, diagnosticsOut, errorsOut)
-		if err != nil {
-			notifier.LogMessage(ctx, types.LogError, err.Error())
-		}
-	}()
-
-	wg.Wait()
-}
-
-func (h *LangHandler) runAllLinters(
+func (h *LangHandler) RunAllLinters(
 	ctx context.Context, uri types.DocumentURI, eventType types.EventType, diagnosticsOut chan<- types.PublishDiagnosticsParams, errorsOut chan<- error) error {
 	f, ok := h.files[uri]
 	if !ok {
