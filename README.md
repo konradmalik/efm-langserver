@@ -4,6 +4,10 @@
 
 General purpose Language Server that can spawn formatters and linters.
 
+![linting](./screenshot.png)
+
+## Description
+
 This is a fork [efm-langserver](https://github.com/mattn/efm-langserver) that will maintain and develop separately.
 It is a cleaned up and simplified version of the original.
 It supports the original configuration but only for formatting and linting. No code actions, completions, hover etc.
@@ -20,9 +24,11 @@ Notable changes from the original:
 - fixed and applied sane defaults for options like `LintAfterOpen`, `LintOnSave` etc.
 - removed explicit support for `LintWorkspace` (linters that lint the whole workspace and do not need filename)
     - it may be implemented back in the future if needed, but I've no usage of such linters, and a quick search through [`creativenull/efmls-configs-nvim`](https://github.com/creativenull/efmls-configs-nvim) showed no usage of this property
+    - tracked in [#11](https://github.com/konradmalik/efm-langserver/issues/11)
 
-![linting](./screenshot.png)
+## Sections
 
+- [Description](#description)
 - [Installation](#installation)
 - [Usage](#usage)
     - [Configuration](#configuration)
