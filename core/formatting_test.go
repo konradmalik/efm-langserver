@@ -64,9 +64,8 @@ func TestApplyRangePlaceholders(t *testing.T) {
 func TestBuildCommand_HandlesPlaceholders(t *testing.T) {
 	cfg := types.Language{FormatCommand: "echo ${flag:opt} ${anotherflag:tpo}"}
 	opts := types.FormattingOptions{"opt": "value"}
-	f := fileRef{Text: "text", LanguageID: "go", NormalizedFilename: "file.txt"}
 
-	cmdStr, err := buildFormatCommandString("/root", &f, opts, nil, cfg)
+	cmdStr, err := buildFormatCommandString("/root", "file.txt", "text", opts, nil, cfg)
 
 	assert.NoError(t, err)
 
@@ -77,10 +76,9 @@ func TestBuildCommand_HandlesPlaceholders(t *testing.T) {
 
 func TestFormatDocument_WithStdin(t *testing.T) {
 	cfg := types.Language{FormatCommand: "cat -", FormatStdin: true}
-	f := fileRef{Text: "hello text", LanguageID: "go", NormalizedFilename: "file.txt"}
 	tmpDir := t.TempDir()
 
-	out, err := formatDocument(t.Context(), tmpDir, f, nil, nil, cfg)
+	out, err := formatDocument(t.Context(), tmpDir, "file.txt", "hello text", nil, nil, cfg)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "hello text", strings.TrimSpace(out))
@@ -103,6 +101,28 @@ func TestRunFormatters_Success(t *testing.T) {
 	edits, err := h.RunAllFormatters(t.Context(), types.DocumentURI("file://"+testfile), nil, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, edits)
+}
+
+func TestRunFormatters_UserPreviousText(t *testing.T) {
+	tmpDir := t.TempDir()
+	testfile := filepath.Join(tmpDir, "text.txt")
+	err := os.WriteFile(testfile, []byte("test"), 0755)
+	assert.NoError(t, err)
+
+	h := &LangHandler{
+		files: map[types.DocumentURI]*fileRef{
+			types.DocumentURI("file://" + testfile): {Text: "hello", LanguageID: "go", NormalizedFilename: testfile},
+		},
+		configs: map[string][]types.Language{
+			"go": {
+				{FormatCommand: "echo \"$(cat -)config1\"", FormatStdin: true, RequireMarker: false},
+				{FormatCommand: "echo \"$(cat -)config2\"", FormatStdin: true, RequireMarker: false},
+			},
+		},
+	}
+	edits, err := h.RunAllFormatters(t.Context(), types.DocumentURI("file://"+testfile), nil, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, "helloconfig1config2\n", edits[0].NewText)
 }
 
 func TestRunFormatters_RequireRootMatcher(t *testing.T) {

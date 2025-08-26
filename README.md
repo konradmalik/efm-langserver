@@ -158,6 +158,14 @@ type Language struct {
 Also note that there's a wildcard for language name `=`. So if you want to define some config entry for all languages,
 you can use `=` as a key.
 
+#### Formatting
+
+Note that while it's always possible to use multiple formatters, only formatters with `formatStdin` will work in such
+cases. If a formatter formats file on disk, multiple formatters will simply always use the original text. When
+`formatStdin` is true, then formatters can use previous formatter output as input which does what we want.
+
+The first formatter can always be non-stdin.
+
 ## Client Setup
 
 ### Configuration for [neovim builtin LSP](https://neovim.io/doc/user/lsp.html) with [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig)

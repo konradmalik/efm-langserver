@@ -20,7 +20,10 @@ func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentUR
 		return nil, fmt.Errorf("document not found: %v", uri)
 	}
 
-	configs := getFormatConfigsForDocument(f.NormalizedFilename, f.LanguageID, h.configs)
+	configs, err := getFormatConfigsForDocument(f.NormalizedFilename, f.LanguageID, h.configs)
+	if err != nil {
+		return nil, err
+	}
 	if len(configs) == 0 {
 		logs.Log.Logf(logs.Warn, "no matching format configs for LanguageID: %v", f.LanguageID)
 		return nil, nil
@@ -32,7 +35,7 @@ func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentUR
 
 	for _, config := range configs {
 		rootPath := h.findRootPath(f.NormalizedFilename, config)
-		newText, err := formatDocument(ctx, rootPath, *f, rng, options, config)
+		newText, err := formatDocument(ctx, rootPath, f.NormalizedFilename, formattedText, rng, options, config)
 
 		if err != nil {
 			logs.Log.Logln(logs.Error, err.Error())
@@ -51,13 +54,15 @@ func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentUR
 	return ComputeEdits(uri, originalText, formattedText)
 }
 
-func formatDocument(ctx context.Context, rootPath string, f fileRef, rng *types.Range, options types.FormattingOptions, config types.Language) (string, error) {
-	cmdStr, err := buildFormatCommandString(rootPath, &f, options, rng, config)
+// this needs to accept textToFormat because in case we have multiple formatters, we can pass previous formatted text.
+// otherwise, we'd format the original file over and over.
+func formatDocument(ctx context.Context, rootPath string, filename string, textToFormat string, rng *types.Range, options types.FormattingOptions, config types.Language) (string, error) {
+	cmdStr, err := buildFormatCommandString(rootPath, filename, textToFormat, options, rng, config)
 	if err != nil {
 		return "", fmt.Errorf("command build error: %s", err)
 	}
 
-	cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.FormatStdin)
+	cmd := buildExecCmd(ctx, cmdStr, rootPath, textToFormat, config, config.FormatStdin)
 	out, err := runFormattingCommand(cmd)
 
 	logs.Log.Logln(logs.Info, cmdStr)
@@ -124,12 +129,12 @@ func applyRangePlaceholders(command string, rng *types.Range, text string) (stri
 	return command, nil
 }
 
-func buildFormatCommandString(rootPath string, f *fileRef, options types.FormattingOptions, rng *types.Range, config types.Language) (string, error) {
+func buildFormatCommandString(rootPath string, filename string, textToFormat string, options types.FormattingOptions, rng *types.Range, config types.Language) (string, error) {
 	command := config.FormatCommand
 	if !config.FormatStdin && !strings.Contains(command, inputPlaceholder) {
 		command += " " + inputPlaceholder
 	}
-	command = replaceCommandInputFilename(command, f.NormalizedFilename, rootPath)
+	command = replaceCommandInputFilename(command, filename, rootPath)
 
 	var err error
 	command, err = applyOptionsPlaceholders(command, options)
@@ -138,7 +143,7 @@ func buildFormatCommandString(rootPath string, f *fileRef, options types.Formatt
 	}
 
 	if rng != nil {
-		command, err = applyRangePlaceholders(command, rng, f.Text)
+		command, err = applyRangePlaceholders(command, rng, textToFormat)
 		if err != nil {
 			return "", err
 		}
@@ -157,7 +162,8 @@ func runFormattingCommand(cmd *exec.Cmd) (string, error) {
 	return string(b), nil
 }
 
-func getFormatConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language) []types.Language {
+func getFormatConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language) ([]types.Language, error) {
+	addedCounter := 0
 	var configs []types.Language
 	for _, cfg := range getAllConfigsForLang(allConfigs, langId) {
 		if cfg.FormatCommand == "" {
@@ -166,9 +172,16 @@ func getFormatConfigsForDocument(fname, langId string, allConfigs map[string][]t
 		if dir := matchRootPath(fname, cfg.RootMarkers); dir == "" && cfg.RequireMarker {
 			continue
 		}
+
+		if addedCounter > 0 && !cfg.FormatStdin {
+			return nil, fmt.Errorf("format cfg for %s is invalid -> for multiple formatters, all except the first must be stdin", langId)
+		}
+
 		configs = append(configs, cfg)
+		addedCounter++
 	}
-	return configs
+
+	return configs, nil
 }
 
 func convertRowColToIndex(lines []string, row, col int) int {

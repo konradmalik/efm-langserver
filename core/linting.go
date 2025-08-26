@@ -64,7 +64,7 @@ func (h *LangHandler) RunAllLinters(
 func lintDocument(ctx context.Context, rootPath string, f fileRef, config types.Language) ([]types.Diagnostic, error) {
 	diagnostics := make([]types.Diagnostic, 0)
 	cmdStr := buildLintCommandString(ctx, rootPath, f, config)
-	cmd := buildExecCmd(ctx, cmdStr, rootPath, f, config, config.LintStdin)
+	cmd := buildExecCmd(ctx, cmdStr, rootPath, f.Text, config, config.LintStdin)
 
 	lintOutput, err := runLintCommand(cmd, &config)
 	logs.Log.Logln(logs.Info, cmdStr)
