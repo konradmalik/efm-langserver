@@ -33,11 +33,13 @@ func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentUR
 	formattedText := originalText
 	formatted := false
 
+	errors := make([]string, 0)
 	for _, config := range configs {
 		rootPath := h.findRootPath(f.NormalizedFilename, config)
 		newText, err := formatDocument(ctx, rootPath, f.NormalizedFilename, formattedText, rng, options, config)
 
 		if err != nil {
+			errors = append(errors, err.Error())
 			logs.Log.Logln(logs.Error, err.Error())
 			continue
 		}
@@ -47,7 +49,7 @@ func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentUR
 	}
 
 	if !formatted {
-		return nil, fmt.Errorf("format for LanguageID not supported: %v", f.LanguageID)
+		return nil, fmt.Errorf("could not format for LanguageID: %s. All errors: %v", f.LanguageID, errors)
 	}
 
 	logs.Log.Logln(logs.Info, "format succeeded")

@@ -3,6 +3,7 @@ package core
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -103,11 +104,20 @@ func TestRunFormatters_Success(t *testing.T) {
 	assert.NotNil(t, edits)
 }
 
-func TestRunFormatters_UserPreviousText(t *testing.T) {
+func TestRunFormatters_UsesPreviousText(t *testing.T) {
 	tmpDir := t.TempDir()
 	testfile := filepath.Join(tmpDir, "text.txt")
 	err := os.WriteFile(testfile, []byte("test"), 0755)
 	assert.NoError(t, err)
+	var cmd1 string
+	var cmd2 string
+	if runtime.GOOS == "windows" {
+		cmd1 = "set /p line= && call echo %line%config1"
+		cmd2 = "set /p line= && call echo %line%config2"
+	} else {
+		cmd1 = "echo \"$(cat -)config1\""
+		cmd2 = "echo \"$(cat -)config2\""
+	}
 
 	h := &LangHandler{
 		files: map[types.DocumentURI]*fileRef{
@@ -115,8 +125,8 @@ func TestRunFormatters_UserPreviousText(t *testing.T) {
 		},
 		configs: map[string][]types.Language{
 			"go": {
-				{FormatCommand: "echo \"$(cat -)config1\"", FormatStdin: true, RequireMarker: false},
-				{FormatCommand: "echo \"$(cat -)config2\"", FormatStdin: true, RequireMarker: false},
+				{FormatCommand: cmd1, FormatStdin: true, RequireMarker: false},
+				{FormatCommand: cmd2, FormatStdin: true, RequireMarker: false},
 			},
 		},
 	}
