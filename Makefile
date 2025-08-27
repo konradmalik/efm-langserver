@@ -17,18 +17,12 @@ install:
 	go install -ldflags=$(BUILD_LDFLAGS) .
 
 .PHONY: show-version
-show-version: $(GOBIN)/gobump
-	@gobump show -r .
-
-$(GOBIN)/gobump:
-	@go install github.com/x-motemen/gobump/cmd/gobump@latest
+show-version:
+	@go tool gobump show -r .
 
 .PHONY: cross
-cross: $(GOBIN)/goxz
-	goxz -n $(BIN) -pv=v$(VERSION) -build-ldflags=$(BUILD_LDFLAGS) .
-
-$(GOBIN)/goxz:
-	go install github.com/Songmu/goxz/cmd/goxz@latest
+cross:
+	go tool goxz -n $(BIN) -pv=v$(VERSION) -build-ldflags=$(BUILD_LDFLAGS) .
 
 .PHONY: test
 test: build
@@ -71,7 +65,4 @@ endif
 
 .PHONY: upload
 upload: $(GOBIN)/ghr
-	ghr "v$(VERSION)" goxz
-
-$(GOBIN)/ghr:
-	go install github.com/tcnksm/ghr@latest
+	go tool ghr "v$(VERSION)" goxz
