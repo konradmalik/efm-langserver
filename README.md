@@ -14,7 +14,7 @@ It supports the original configuration but only for formatting and linting. No c
 
 Notable changes from the original:
 
-- no config.yaml, settings needs to be passed via DidChangeConfiguration
+- no config.yaml, settings need to be passed via DidChangeConfiguration
 - only linting and formatting (for now)
 - better diffs handling for formatting (no more "format twice to remove an extra newline")
     - external, maintained diff library used for that
