@@ -176,7 +176,7 @@ func getFormatConfigsForDocument(fname, langId string, allConfigs map[string][]t
 		}
 
 		if addedCounter > 0 && !cfg.FormatStdin {
-			return nil, fmt.Errorf("format cfg for %s is invalid -> for multiple formatters, all except the first must be stdin", langId)
+			return nil, fmt.Errorf("format cfg for %s is invalid -> for multiple formatters, only the first one can be non-stdin", langId)
 		}
 
 		configs = append(configs, cfg)
