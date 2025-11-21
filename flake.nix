@@ -24,16 +24,22 @@
         ] (system: function (nixpkgsFor system));
     in
     {
-      devShells = forAllSystems (pkgs: {
-        default = pkgs.mkShell {
-          name = "efm";
-          packages = with pkgs; [
-            nodePackages.prettier
-            json-schema-for-humans
-          ];
-          inputsFrom = [ self.packages.${pkgs.system}.default ];
-        };
-      });
+      devShells = forAllSystems (
+        pkgs:
+        let
+          system = pkgs.stdenvNoCC.hostPlatform.system;
+        in
+        {
+          default = pkgs.mkShell {
+            name = "efm";
+            packages = with pkgs; [
+              nodePackages.prettier
+              json-schema-for-humans
+            ];
+            inputsFrom = [ self.packages.${system}.default ];
+          };
+        }
+      );
       formatter = forAllSystems (pkgs: pkgs.nixpkgs-fmt);
 
       packages = forAllSystems (
