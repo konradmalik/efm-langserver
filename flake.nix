@@ -60,7 +60,8 @@
             '';
         in
         rec {
-          default = pkgs.buildGoModule {
+          default = efm-langserver;
+          efm-langserver = pkgs.buildGoModule {
             inherit pname;
             version = "0.0.1";
 
@@ -74,32 +75,32 @@
               golangci-lint run ./...
             '';
           };
-          amd64-linux = default.overrideAttrs rec {
+          efm-langserver-amd64-linux = efm-langserver.overrideAttrs rec {
             env.GOOS = "linux";
             env.GOARCH = "amd64";
             postInstall = postInstallScript env.GOOS;
           };
-          arm64-linux = default.overrideAttrs rec {
+          efm-langserver-arm64-linux = efm-langserver.overrideAttrs rec {
             env.GOOS = "linux";
             env.GOARCH = "arm64";
             postInstall = postInstallScript env.GOOS;
           };
-          amd64-darwin = default.overrideAttrs rec {
+          efm-langserver-amd64-darwin = efm-langserver.overrideAttrs rec {
             env.GOOS = "darwin";
             env.GOARCH = "amd64";
             postInstall = postInstallScript env.GOOS;
           };
-          arm64-darwin = default.overrideAttrs rec {
+          efm-langserver-arm64-darwin = efm-langserver.overrideAttrs rec {
             env.GOOS = "darwin";
             env.GOARCH = "arm64";
             postInstall = postInstallScript env.GOOS;
           };
-          amd64-windows = default.overrideAttrs rec {
+          efm-langserver-amd64-windows = efm-langserver.overrideAttrs rec {
             env.GOOS = "windows";
             env.GOARCH = "amd64";
             postInstall = postInstallScript env.GOOS;
           };
-          arm64-windows = default.overrideAttrs rec {
+          efm-langserver-arm64-windows = efm-langserver.overrideAttrs rec {
             env.GOOS = "windows";
             env.GOARCH = "arm64";
             postInstall = postInstallScript env.GOOS;
