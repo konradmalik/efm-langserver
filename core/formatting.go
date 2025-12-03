@@ -12,7 +12,13 @@ import (
 	"github.com/konradmalik/flint-ls/types"
 )
 
-var unfilledPlaceholders = regexp.MustCompile(`\${[^}]*}`)
+var (
+	reUnfilledPlaceholders = regexp.MustCompile(`\${[^}]*}`)
+	// ${--flag:opt}
+	reColon = regexp.MustCompile(`\$\{([^:}]+):([^}]+)\}`)
+	// ${--flag=opt}
+	reEquals = regexp.MustCompile(`\$\{([^=}]+)=([^}]+)\}`)
+)
 
 func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentURI, rng *types.Range, options types.FormattingOptions) ([]types.TextEdit, error) {
 	f, ok := h.files[uri]
@@ -77,31 +83,44 @@ func formatDocument(ctx context.Context, rootPath string, filename string, textT
 	return strings.ReplaceAll(out, carriageReturn, ""), nil
 }
 
-func applyOptionsPlaceholders(command string, options types.FormattingOptions) (string, error) {
-	for placeholder, value := range options {
-		re, err := regexp.Compile(fmt.Sprintf(`\${([^:|^}]+):%s}`, placeholder))
-		re2, err2 := regexp.Compile(fmt.Sprintf(`\${([^=|^}]+)=%s}`, placeholder))
-		nre, nerr := regexp.Compile(fmt.Sprintf(`\${([^:|^}]+):!%s}`, placeholder))
-		nre2, nerr2 := regexp.Compile(fmt.Sprintf(`\${([^=|^}]+)=!%s}`, placeholder))
-		if err != nil || err2 != nil || nerr != nil || nerr2 != nil {
-			return command, fmt.Errorf("invalid option placeholder regex for %s", placeholder)
-		}
+func resolveOptionsPlaceholder[T any](re *regexp.Regexp, match string, options map[string]T, sep string) string {
+	parts := re.FindStringSubmatch(match)
+	flag, opt := parts[1], parts[2]
 
-		switch v := value.(type) {
-		default:
-			command = re.ReplaceAllString(command, fmt.Sprintf("%s %v", flagPlaceholder, v))
-			command = re2.ReplaceAllString(command, fmt.Sprintf("%s=%v", flagPlaceholder, v))
-		case bool:
-			if v {
-				command = re.ReplaceAllString(command, flagPlaceholder)
-				command = re2.ReplaceAllString(command, flagPlaceholder)
-			} else {
-				command = nre.ReplaceAllString(command, flagPlaceholder)
-				command = nre2.ReplaceAllString(command, flagPlaceholder)
-			}
-		}
+	neg := strings.HasPrefix(opt, "!")
+	key := strings.TrimPrefix(opt, "!")
+
+	v, ok := options[key]
+	if !ok {
+		return match // no option found
 	}
-	return command, nil
+
+	switch b := any(v).(type) {
+	case bool:
+		if b == !neg { // bool true and not negated, or bool false and negated
+			return flag
+		}
+		return "" // remove placeholder
+	default:
+		if neg {
+			return "" // negated default makes no sense
+		}
+		return fmt.Sprintf("%s%s%v", flag, sep, v)
+	}
+}
+
+func applyOptionsPlaceholders[T any](command string, options map[string]T) (string, error) {
+	// Handle : syntax (flag:value)
+	command = reColon.ReplaceAllStringFunc(command, func(match string) string {
+		return resolveOptionsPlaceholder(reColon, match, options, " ")
+	})
+
+	// Handle = syntax (flag=value)
+	command = reEquals.ReplaceAllStringFunc(command, func(match string) string {
+		return resolveOptionsPlaceholder(reEquals, match, options, "=")
+	})
+
+	return strings.TrimSpace(command), nil
 }
 
 func applyRangePlaceholders(command string, rng *types.Range, text string) (string, error) {
@@ -118,17 +137,7 @@ func applyRangePlaceholders(command string, rng *types.Range, text string) (stri
 		"colEnd":    rng.End.Character,
 	}
 
-	for placeholder, value := range rangeOptions {
-		re, err := regexp.Compile(fmt.Sprintf(`\${([^:|^}]+):%s}`, placeholder))
-		re2, err2 := regexp.Compile(fmt.Sprintf(`\${([^=|^}]+)=%s}`, placeholder))
-		if err != nil || err2 != nil {
-			return command, fmt.Errorf("invalid range placeholder regex for %s", placeholder)
-		}
-		command = re.ReplaceAllString(command, fmt.Sprintf("%s %d", flagPlaceholder, value))
-		command = re2.ReplaceAllString(command, fmt.Sprintf("%s=%d", flagPlaceholder, value))
-	}
-
-	return command, nil
+	return applyOptionsPlaceholders(command, rangeOptions)
 }
 
 func buildFormatCommandString(rootPath string, filename string, textToFormat string, options types.FormattingOptions, rng *types.Range, command string) (string, error) {
@@ -147,7 +156,7 @@ func buildFormatCommandString(rootPath string, filename string, textToFormat str
 		}
 	}
 
-	return unfilledPlaceholders.ReplaceAllString(command, ""), nil
+	return reUnfilledPlaceholders.ReplaceAllString(command, ""), nil
 }
 
 func runFormattingCommand(cmd *exec.Cmd) (string, error) {
