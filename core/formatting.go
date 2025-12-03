@@ -59,12 +59,12 @@ func (h *LangHandler) RunAllFormatters(ctx context.Context, uri types.DocumentUR
 // this needs to accept textToFormat because in case we have multiple formatters, we can pass previous formatted text.
 // otherwise, we'd format the original file over and over.
 func formatDocument(ctx context.Context, rootPath string, filename string, textToFormat string, rng *types.Range, options types.FormattingOptions, config types.Language) (string, error) {
-	cmdStr, err := buildFormatCommandString(rootPath, filename, textToFormat, options, rng, config)
+	cmdStr, err := buildFormatCommandString(rootPath, filename, textToFormat, options, rng, config.FormatCommand)
 	if err != nil {
 		return "", fmt.Errorf("command build error: %s", err)
 	}
 
-	cmd := buildExecCmd(ctx, cmdStr, rootPath, textToFormat, config, config.FormatStdin)
+	cmd := buildExecCmd(ctx, cmdStr, rootPath, textToFormat, config, true)
 	out, err := runFormattingCommand(cmd)
 
 	logs.Log.Logln(logs.Info, cmdStr)
@@ -131,11 +131,7 @@ func applyRangePlaceholders(command string, rng *types.Range, text string) (stri
 	return command, nil
 }
 
-func buildFormatCommandString(rootPath string, filename string, textToFormat string, options types.FormattingOptions, rng *types.Range, config types.Language) (string, error) {
-	command := config.FormatCommand
-	if !config.FormatStdin && !strings.Contains(command, inputPlaceholder) {
-		command += " " + inputPlaceholder
-	}
+func buildFormatCommandString(rootPath string, filename string, textToFormat string, options types.FormattingOptions, rng *types.Range, command string) (string, error) {
 	command = replaceCommandInputFilename(command, filename, rootPath)
 
 	var err error
@@ -165,7 +161,6 @@ func runFormattingCommand(cmd *exec.Cmd) (string, error) {
 }
 
 func getFormatConfigsForDocument(fname, langId string, allConfigs map[string][]types.Language) ([]types.Language, error) {
-	addedCounter := 0
 	var configs []types.Language
 	for _, cfg := range getAllConfigsForLang(allConfigs, langId) {
 		if cfg.FormatCommand == "" {
@@ -175,12 +170,7 @@ func getFormatConfigsForDocument(fname, langId string, allConfigs map[string][]t
 			continue
 		}
 
-		if addedCounter > 0 && !cfg.FormatStdin {
-			return nil, fmt.Errorf("format cfg for %s is invalid -> for multiple formatters, only the first one can be non-stdin", langId)
-		}
-
 		configs = append(configs, cfg)
-		addedCounter++
 	}
 
 	return configs, nil

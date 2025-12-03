@@ -34,7 +34,6 @@ type Language struct {
 	LintOnSave     *bool    `json:"lintOnSave,omitempty"`
 	FormatCommand  string   `json:"formatCommand,omitempty"`
 	FormatCanRange bool     `json:"formatCanRange,omitempty"`
-	FormatStdin    bool     `json:"formatStdin,omitempty"`
 	Env            []string `json:"env,omitempty"`
 	RootMarkers    []string `json:"rootMarkers,omitempty"`
 	RequireMarker  bool     `json:"requireMarker,omitempty"`

@@ -7,25 +7,24 @@
       - [2.1.1.1. Property `prefix`](#languages_pattern1_items_prefix)
       - [2.1.1.2. Property `format-can-range`](#languages_pattern1_items_format-can-range)
       - [2.1.1.3. Property `format-command`](#languages_pattern1_items_format-command)
-      - [2.1.1.4. Property `format-stdin`](#languages_pattern1_items_format-stdin)
-      - [2.1.1.5. Property `env`](#languages_pattern1_items_env)
-        - [2.1.1.5.1. env items](#languages_pattern1_items_env_items)
-      - [2.1.1.6. Property `lint-command`](#languages_pattern1_items_lint-command)
-      - [2.1.1.7. Property `lint-offset-columns`](#languages_pattern1_items_lint-offset-columns)
-      - [2.1.1.8. Property `lint-category-map`](#languages_pattern1_items_lint-category-map)
-      - [2.1.1.9. Property `lint-formats`](#languages_pattern1_items_lint-formats)
-        - [2.1.1.9.1. lint-formats items](#languages_pattern1_items_lint-formats_items)
-      - [2.1.1.10. Property `lint-ignore-exit-code`](#languages_pattern1_items_lint-ignore-exit-code)
-      - [2.1.1.11. Property `lint-offset`](#languages_pattern1_items_lint-offset)
-      - [2.1.1.12. Property `lint-after-open`](#languages_pattern1_items_lint-after-open)
-      - [2.1.1.13. Property `lint-on-save`](#languages_pattern1_items_lint-on-save)
-      - [2.1.1.14. Property `lint-on-change`](#languages_pattern1_items_lint-on-change)
-      - [2.1.1.15. Property `lint-severity`](#languages_pattern1_items_lint-severity)
-      - [2.1.1.16. Property `lint-source`](#languages_pattern1_items_lint-source)
-      - [2.1.1.17. Property `lint-stdin`](#languages_pattern1_items_lint-stdin)
-      - [2.1.1.18. Property `root-markers`](#languages_pattern1_items_root-markers)
-        - [2.1.1.18.1. root-markers items](#languages_pattern1_items_root-markers_items)
-      - [2.1.1.19. Property `require-marker`](#languages_pattern1_items_require-marker)
+      - [2.1.1.4. Property `env`](#languages_pattern1_items_env)
+        - [2.1.1.4.1. env items](#languages_pattern1_items_env_items)
+      - [2.1.1.5. Property `lint-command`](#languages_pattern1_items_lint-command)
+      - [2.1.1.6. Property `lint-offset-columns`](#languages_pattern1_items_lint-offset-columns)
+      - [2.1.1.7. Property `lint-category-map`](#languages_pattern1_items_lint-category-map)
+      - [2.1.1.8. Property `lint-formats`](#languages_pattern1_items_lint-formats)
+        - [2.1.1.8.1. lint-formats items](#languages_pattern1_items_lint-formats_items)
+      - [2.1.1.9. Property `lint-ignore-exit-code`](#languages_pattern1_items_lint-ignore-exit-code)
+      - [2.1.1.10. Property `lint-offset`](#languages_pattern1_items_lint-offset)
+      - [2.1.1.11. Property `lint-after-open`](#languages_pattern1_items_lint-after-open)
+      - [2.1.1.12. Property `lint-on-save`](#languages_pattern1_items_lint-on-save)
+      - [2.1.1.13. Property `lint-on-change`](#languages_pattern1_items_lint-on-change)
+      - [2.1.1.14. Property `lint-severity`](#languages_pattern1_items_lint-severity)
+      - [2.1.1.15. Property `lint-source`](#languages_pattern1_items_lint-source)
+      - [2.1.1.16. Property `lint-stdin`](#languages_pattern1_items_lint-stdin)
+      - [2.1.1.17. Property `root-markers`](#languages_pattern1_items_root-markers)
+        - [2.1.1.17.1. root-markers items](#languages_pattern1_items_root-markers_items)
+      - [2.1.1.18. Property `require-marker`](#languages_pattern1_items_require-marker)
 - [3. Property `tools`](#tools)
   - [3.1. Pattern Property `tool-definition`](#tools_pattern1)
 - [4. Property `root-markers`](#root-markers)
@@ -115,7 +114,6 @@ must respect the following conditions
 | - [prefix](#languages_pattern1_items_prefix )                               | No      | string          | No         | -          | If `lint-source` doesn't work, you can set a prefix here instead, which will render the messages as "[prefix] message".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | - [format-can-range](#languages_pattern1_items_format-can-range )           | No      | boolean         | No         | -          | Whether the formatting command handles range start and range end                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | - [format-command](#languages_pattern1_items_format-command )               | No      | string          | No         | -          | Formatting command. Input filename can be injected using `${INPUT}`, and flags can be injected using `${--flag:key}` (adds `--flag <value>` if value exists for key), `${--flag=key}` (adds `--flag=<value>` if value exists for key), or `${--flag:!key}` (adds `--flag` if value for key is falsy).<br /><br />`efm-langserver` may provide values for keys `charStart`, `charEnd`, `rowStart`, `rowEnd`, `colStart`, `colEnd`, or any key in [`interface FormattingOptions`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#formattingOptions).<br /><br />Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${--use-tabs:insertSpaces} ${--range-start=charStart} ${--range-start=charEnd}` |
-| - [format-stdin](#languages_pattern1_items_format-stdin )                   | No      | boolean         | No         | -          | use stdin for the format                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | - [env](#languages_pattern1_items_env )                                     | No      | array of string | No         | -          | command environment variables and values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | - [lint-command](#languages_pattern1_items_lint-command )                   | No      | string          | No         | -          | Lint command. Input filename can be injected using `${INPUT}`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | - [lint-offset-columns](#languages_pattern1_items_lint-offset-columns )     | No      | number          | No         | -          | offset value to skip columns (will be added)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -163,16 +161,7 @@ must respect the following conditions
 
 Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${--use-tabs:insertSpaces} ${--range-start=charStart} ${--range-start=charEnd}`
 
-##### <a name="languages_pattern1_items_format-stdin"></a>2.1.1.4. Property `format-stdin`
-
-|              |           |
-| ------------ | --------- |
-| **Type**     | `boolean` |
-| **Required** | No        |
-
-**Description:** use stdin for the format
-
-##### <a name="languages_pattern1_items_env"></a>2.1.1.5. Property `env`
+##### <a name="languages_pattern1_items_env"></a>2.1.1.4. Property `env`
 
 |              |                   |
 | ------------ | ----------------- |
@@ -193,7 +182,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 | ------------------------------------------------ | ----------- |
 | [env items](#languages_pattern1_items_env_items) | -           |
 
-###### <a name="languages_pattern1_items_env_items"></a>2.1.1.5.1. env items
+###### <a name="languages_pattern1_items_env_items"></a>2.1.1.4.1. env items
 
 |              |          |
 | ------------ | -------- |
@@ -204,7 +193,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 | --------------------------------- | ------------------------------------------------------------------- |
 | **Must match regular expression** | ```^.+=.+$``` [Test](https://regex101.com/?regex=%5E.%2B%3D.%2B%24) |
 
-##### <a name="languages_pattern1_items_lint-command"></a>2.1.1.6. Property `lint-command`
+##### <a name="languages_pattern1_items_lint-command"></a>2.1.1.5. Property `lint-command`
 
 |              |          |
 | ------------ | -------- |
@@ -213,7 +202,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** Lint command. Input filename can be injected using `${INPUT}`.
 
-##### <a name="languages_pattern1_items_lint-offset-columns"></a>2.1.1.7. Property `lint-offset-columns`
+##### <a name="languages_pattern1_items_lint-offset-columns"></a>2.1.1.6. Property `lint-offset-columns`
 
 |              |          |
 | ------------ | -------- |
@@ -222,7 +211,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** offset value to skip columns (will be added)
 
-##### <a name="languages_pattern1_items_lint-category-map"></a>2.1.1.8. Property `lint-category-map`
+##### <a name="languages_pattern1_items_lint-category-map"></a>2.1.1.7. Property `lint-category-map`
 
 |                           |                  |
 | ------------------------- | ---------------- |
@@ -232,7 +221,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** Map linter categories to LSP categories
 
-##### <a name="languages_pattern1_items_lint-formats"></a>2.1.1.9. Property `lint-formats`
+##### <a name="languages_pattern1_items_lint-formats"></a>2.1.1.8. Property `lint-formats`
 
 |              |                   |
 | ------------ | ----------------- |
@@ -255,14 +244,14 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 | ------------------------------------------------------------------ | ----------- |
 | [lint-formats items](#languages_pattern1_items_lint-formats_items) | -           |
 
-###### <a name="languages_pattern1_items_lint-formats_items"></a>2.1.1.9.1. lint-formats items
+###### <a name="languages_pattern1_items_lint-formats_items"></a>2.1.1.8.1. lint-formats items
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
 | **Required** | No       |
 
-##### <a name="languages_pattern1_items_lint-ignore-exit-code"></a>2.1.1.10. Property `lint-ignore-exit-code`
+##### <a name="languages_pattern1_items_lint-ignore-exit-code"></a>2.1.1.9. Property `lint-ignore-exit-code`
 
 |              |           |
 | ------------ | --------- |
@@ -272,7 +261,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** ignore exit code of lint
 
-##### <a name="languages_pattern1_items_lint-offset"></a>2.1.1.11. Property `lint-offset`
+##### <a name="languages_pattern1_items_lint-offset"></a>2.1.1.10. Property `lint-offset`
 
 |              |          |
 | ------------ | -------- |
@@ -281,7 +270,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** offset value to skip lines (will be subtracted)
 
-##### <a name="languages_pattern1_items_lint-after-open"></a>2.1.1.12. Property `lint-after-open`
+##### <a name="languages_pattern1_items_lint-after-open"></a>2.1.1.11. Property `lint-after-open`
 
 |              |           |
 | ------------ | --------- |
@@ -291,7 +280,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** lint after open (defaults to true)
 
-##### <a name="languages_pattern1_items_lint-on-save"></a>2.1.1.13. Property `lint-on-save`
+##### <a name="languages_pattern1_items_lint-on-save"></a>2.1.1.12. Property `lint-on-save`
 
 |              |           |
 | ------------ | --------- |
@@ -300,7 +289,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** lint on save (defaults to true)
 
-##### <a name="languages_pattern1_items_lint-on-change"></a>2.1.1.14. Property `lint-on-change`
+##### <a name="languages_pattern1_items_lint-on-change"></a>2.1.1.13. Property `lint-on-change`
 
 |              |           |
 | ------------ | --------- |
@@ -309,7 +298,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** lint on change (defaults to true)
 
-##### <a name="languages_pattern1_items_lint-severity"></a>2.1.1.15. Property `lint-severity`
+##### <a name="languages_pattern1_items_lint-severity"></a>2.1.1.14. Property `lint-severity`
 
 |              |          |
 | ------------ | -------- |
@@ -318,7 +307,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** default severity to show if violation doesn't provide severity. 1 = error, 2 = warning, 3 = info, 4 = hint
 
-##### <a name="languages_pattern1_items_lint-source"></a>2.1.1.16. Property `lint-source`
+##### <a name="languages_pattern1_items_lint-source"></a>2.1.1.15. Property `lint-source`
 
 |              |          |
 | ------------ | -------- |
@@ -327,7 +316,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** show where the lint came from, e.g. 'eslint'
 
-##### <a name="languages_pattern1_items_lint-stdin"></a>2.1.1.17. Property `lint-stdin`
+##### <a name="languages_pattern1_items_lint-stdin"></a>2.1.1.16. Property `lint-stdin`
 
 |              |           |
 | ------------ | --------- |
@@ -337,7 +326,7 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 
 **Description:** use stdin for the lint
 
-##### <a name="languages_pattern1_items_root-markers"></a>2.1.1.18. Property `root-markers`
+##### <a name="languages_pattern1_items_root-markers"></a>2.1.1.17. Property `root-markers`
 
 |              |                   |
 | ------------ | ----------------- |
@@ -358,14 +347,14 @@ Example: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${-
 | ------------------------------------------------------------------ | ----------- |
 | [root-markers items](#languages_pattern1_items_root-markers_items) | -           |
 
-###### <a name="languages_pattern1_items_root-markers_items"></a>2.1.1.18.1. root-markers items
+###### <a name="languages_pattern1_items_root-markers_items"></a>2.1.1.17.1. root-markers items
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
 | **Required** | No       |
 
-##### <a name="languages_pattern1_items_require-marker"></a>2.1.1.19. Property `require-marker`
+##### <a name="languages_pattern1_items_require-marker"></a>2.1.1.18. Property `require-marker`
 
 |              |           |
 | ------------ | --------- |
@@ -462,4 +451,4 @@ must respect the following conditions
 **Description:** duration to debounce calls to the linter executable. e.g.: 1s
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-08-22 at 09:33:44 +0200
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-12-03 at 10:05:58 +0100

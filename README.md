@@ -16,6 +16,7 @@ Notable changes from the original:
 
 - no config.yaml, settings need to be passed via DidChangeConfiguration
 - only linting and formatting (for now)
+- all formatters must support stdin, non-stdin formatters won't work. Option `formatStdin` was removed.
 - better diffs handling for formatting (no more "format twice to remove an extra newline")
     - external, maintained diff library used for that
 - support for errorformat's end line and end column
@@ -113,8 +114,7 @@ Example
         "rootMarkers": [".git/"],
         "languages": {
             "lua": {
-                "formatCommand": "lua-format -i",
-                "formatStdin": true
+                "formatCommand": "lua-format -i"
             }
         }
     }
@@ -154,7 +154,6 @@ type Language struct {
 	LintOnSave     *bool    `json:"lintOnSave,omitempty"`
 	FormatCommand  string   `json:"formatCommand,omitempty"`
 	FormatCanRange bool     `json:"formatCanRange,omitempty"`
-	FormatStdin    bool     `json:"formatStdin,omitempty"`
 	Env            []string `json:"env,omitempty"`
 	RootMarkers    []string `json:"rootMarkers,omitempty"`
 	RequireMarker  bool     `json:"requireMarker,omitempty"`
@@ -166,11 +165,8 @@ you can use `=` as a key.
 
 #### Formatting
 
-Note that while it's always possible to use multiple formatters, only formatters with `formatStdin` will work in such
-cases. If a formatter formats file on disk, multiple formatters will simply always use the original text. When
-`formatStdin` is true, then formatters can use previous formatter output as input which does what we want.
-
-The first formatter can always be non-stdin.
+All formatters must support stdin. When a formatter uses non-stdin in replaces file contents on disk which leads to
+confusing and unpredictable results.
 
 ## Client Setup
 
@@ -187,7 +183,7 @@ require "lspconfig".efm.setup {
         rootMarkers = {".git/"},
         languages = {
             lua = {
-                {formatCommand = "lua-format -i", formatStdin = true}
+                {formatCommand = "lua-format -i"}
             }
         }
     }
@@ -207,12 +203,12 @@ If you define your own, make sure to define as a table of tables:
 
 ```lua
 lua = {
-    {formatCommand = "lua-format -i", formatStdin = true}
+    {formatCommand = "lua-format -i"}
 }
 
 -- and for multiple formatters, add to the table
 lua = {
-    {formatCommand = "lua-format -i", formatStdin = true},
+    {formatCommand = "lua-format -i"},
     {formatCommand = "lua-pretty -i"}
 }
 ```

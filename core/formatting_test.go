@@ -63,20 +63,20 @@ func TestApplyRangePlaceholders(t *testing.T) {
 }
 
 func TestBuildCommand_HandlesPlaceholders(t *testing.T) {
-	cfg := types.Language{FormatCommand: "echo ${flag:opt} ${anotherflag:tpo}"}
+	command := "echo ${flag:opt} ${anotherflag:tpo}"
 	opts := types.FormattingOptions{"opt": "value"}
 
-	cmdStr, err := buildFormatCommandString("/root", "file.txt", "text", opts, nil, cfg)
+	cmdStr, err := buildFormatCommandString("/root", "file.txt", "text", opts, nil, command)
 
 	assert.NoError(t, err)
 
 	assert.Contains(t, cmdStr, "flag value")
 	assert.NotContains(t, cmdStr, "anotherflag")
-	assert.Contains(t, cmdStr, "file.txt")
+	assert.NotContains(t, cmdStr, "file.txt")
 }
 
 func TestFormatDocument_WithStdin(t *testing.T) {
-	cfg := types.Language{FormatCommand: "cat -", FormatStdin: true}
+	cfg := types.Language{FormatCommand: "cat -"}
 	tmpDir := t.TempDir()
 
 	out, err := formatDocument(t.Context(), tmpDir, "file.txt", "hello text", nil, nil, cfg)
@@ -125,8 +125,8 @@ func TestRunFormatters_UsesPreviousText(t *testing.T) {
 		},
 		configs: map[string][]types.Language{
 			"go": {
-				{FormatCommand: cmd1, FormatStdin: true, RequireMarker: false},
-				{FormatCommand: cmd2, FormatStdin: true, RequireMarker: false},
+				{FormatCommand: cmd1, RequireMarker: false},
+				{FormatCommand: cmd2, RequireMarker: false},
 			},
 		},
 	}
@@ -145,11 +145,9 @@ func TestRunFormatters_RequireRootMatcher(t *testing.T) {
 		configs: map[string][]types.Language{
 			"vim": {
 				{
-					LintCommand:        `echo ` + filepath + `:2:No it is normal!`,
-					LintIgnoreExitCode: true,
-					LintStdin:          true,
-					RequireMarker:      true,
-					RootMarkers:        []string{".vimlintrc"},
+					FormatCommand: `echo ` + filepath + `:2:No it is normal!`,
+					RequireMarker: true,
+					RootMarkers:   []string{".vimfmtrc"},
 				},
 			},
 		},
