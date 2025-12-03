@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/types"
 )
 
 type LspNotifier struct {

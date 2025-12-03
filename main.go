@@ -9,13 +9,13 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 
-	"github.com/konradmalik/efm-langserver/core"
-	"github.com/konradmalik/efm-langserver/logs"
-	"github.com/konradmalik/efm-langserver/lsp"
+	"github.com/konradmalik/flint-ls/core"
+	"github.com/konradmalik/flint-ls/logs"
+	"github.com/konradmalik/flint-ls/lsp"
 )
 
 const (
-	name    = "efm-langserver"
+	name    = "flint-ls"
 	version = "0.0.54"
 )
 
@@ -62,7 +62,7 @@ func main() {
 		jsonrpc2.HandlerWithError(handler.Handle),
 		jsonrpc2.LogMessages(logs.Log)).DisconnectNotify()
 
-	logs.Log.Logln(logs.Info, "efm-langserver: connections closed")
+	logs.Log.Logln(logs.Info, "flint-ls: connections closed")
 }
 
 type stdrwc struct{}

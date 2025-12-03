@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/types"
 	"github.com/reviewdog/errorformat"
 	"github.com/stretchr/testify/assert"
 )

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/konradmalik/efm-langserver/logs"
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/logs"
+	"github.com/konradmalik/flint-ls/types"
 	"github.com/reviewdog/errorformat"
 )
 
@@ -176,7 +176,7 @@ func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
 	lintOutput, lintCmdError := cmd.CombinedOutput()
 	// Most of lint tools exit with non-zero value. But some commands
 	// return with zero value. We can not handle the output is real result
-	// or output of usage. So efm-langserver ignore that command exiting
+	// or output of usage. So flint-ls ignore that command exiting
 	// with zero-value. So if you want to handle the command which exit
 	// with zero value, please specify lint-ignore-exit-code.
 	if !config.LintIgnoreExitCode && lintCmdError == nil {

@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 
-	"github.com/konradmalik/efm-langserver/core"
-	"github.com/konradmalik/efm-langserver/logs"
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/core"
+	"github.com/konradmalik/flint-ls/logs"
+	"github.com/konradmalik/flint-ls/types"
 )
 
 type LspHandler struct {

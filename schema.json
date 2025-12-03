@@ -16,7 +16,7 @@
           "type": "boolean"
         },
         "format-command": {
-          "description": "Formatting command. Input filename can be injected using `${INPUT}`, and flags can be injected using `${--flag:key}` (adds `--flag <value>` if value exists for key), `${--flag=key}` (adds `--flag=<value>` if value exists for key), or `${--flag:!key}` (adds `--flag` if value for key is falsy).\n\n`efm-langserver` may provide values for keys `charStart`, `charEnd`, `rowStart`, `rowEnd`, `colStart`, `colEnd`, or any key in [`interface FormattingOptions`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#formattingOptions).\n\nExample: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${--use-tabs:insertSpaces} ${--range-start=charStart} ${--range-start=charEnd}`",
+          "description": "Formatting command. Input filename can be injected using `${INPUT}`, and flags can be injected using `${--flag:key}` (adds `--flag <value>` if value exists for key), `${--flag=key}` (adds `--flag=<value>` if value exists for key), or `${--flag:!key}` (adds `--flag` if value for key is falsy).\n\n`flint-ls` may provide values for keys `charStart`, `charEnd`, `rowStart`, `rowEnd`, `colStart`, `colEnd`, or any key in [`interface FormattingOptions`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#formattingOptions).\n\nExample: `prettier --stdin --stdin-filepath ${INPUT} ${--tab-width:tabWidth} ${--use-tabs:insertSpaces} ${--range-start=charStart} ${--range-start=charEnd}`",
           "type": "string"
         },
         "env": {
@@ -40,7 +40,7 @@
           "type": "object"
         },
         "lint-formats": {
-          "description": "List of Vim errorformats to capture. See: https://vimhelp.org/quickfix.txt.html#errorformats. If this is not expressive enough, you can edit the `lint-command` to do some preprocessing, e.g. using `sed` or `jq`.\n\n`efm-langserver` uses a Go implementation to parse the errors, which comes with a CLI for quick testing: https://github.com/reviewdog/errorformat",
+          "description": "List of Vim errorformats to capture. See: https://vimhelp.org/quickfix.txt.html#errorformats. If this is not expressive enough, you can edit the `lint-command` to do some preprocessing, e.g. using `sed` or `jq`.\n\n`flint-ls` uses a Go implementation to parse the errors, which comes with a CLI for quick testing: https://github.com/reviewdog/errorformat",
           "items": {
             "type": "string"
           },
@@ -141,6 +141,6 @@
       "type": "string"
     }
   },
-  "title": "efm-langserver",
+  "title": "flint-ls",
   "type": "object"
 }

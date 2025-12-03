@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"unicode"
 
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/types"
 )
 
 const fileScheme = "file"

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/types"
 	"github.com/stretchr/testify/assert"
 )
 

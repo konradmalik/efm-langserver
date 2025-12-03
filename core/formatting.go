@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/konradmalik/efm-langserver/logs"
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/logs"
+	"github.com/konradmalik/flint-ls/types"
 )
 
 var unfilledPlaceholders = regexp.MustCompile(`\${[^}]*}`)

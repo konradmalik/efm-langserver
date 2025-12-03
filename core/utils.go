@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/types"
 )
 
 const (

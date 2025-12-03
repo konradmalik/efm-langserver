@@ -45,7 +45,7 @@
       packages = forAllSystems (
         pkgs:
         let
-          pname = "efm-langserver";
+          pname = "flint-ls";
           postInstallScript =
             os:
             let
@@ -60,8 +60,8 @@
             '';
         in
         rec {
-          default = efm-langserver;
-          efm-langserver = pkgs.buildGoModule {
+          default = flint-ls;
+          flint-ls = pkgs.buildGoModule {
             inherit pname;
             version = "0.0.1";
 
@@ -75,32 +75,32 @@
               golangci-lint run ./...
             '';
           };
-          efm-langserver-amd64-linux = efm-langserver.overrideAttrs rec {
+          flint-ls-amd64-linux = flint-ls.overrideAttrs rec {
             env.GOOS = "linux";
             env.GOARCH = "amd64";
             postInstall = postInstallScript env.GOOS;
           };
-          efm-langserver-arm64-linux = efm-langserver.overrideAttrs rec {
+          flint-ls-arm64-linux = flint-ls.overrideAttrs rec {
             env.GOOS = "linux";
             env.GOARCH = "arm64";
             postInstall = postInstallScript env.GOOS;
           };
-          efm-langserver-amd64-darwin = efm-langserver.overrideAttrs rec {
+          flint-ls-amd64-darwin = flint-ls.overrideAttrs rec {
             env.GOOS = "darwin";
             env.GOARCH = "amd64";
             postInstall = postInstallScript env.GOOS;
           };
-          efm-langserver-arm64-darwin = efm-langserver.overrideAttrs rec {
+          flint-ls-arm64-darwin = flint-ls.overrideAttrs rec {
             env.GOOS = "darwin";
             env.GOARCH = "arm64";
             postInstall = postInstallScript env.GOOS;
           };
-          efm-langserver-amd64-windows = efm-langserver.overrideAttrs rec {
+          flint-ls-amd64-windows = flint-ls.overrideAttrs rec {
             env.GOOS = "windows";
             env.GOARCH = "amd64";
             postInstall = postInstallScript env.GOOS;
           };
-          efm-langserver-arm64-windows = efm-langserver.overrideAttrs rec {
+          flint-ls-arm64-windows = flint-ls.overrideAttrs rec {
             env.GOOS = "windows";
             env.GOARCH = "arm64";
             postInstall = postInstallScript env.GOOS;

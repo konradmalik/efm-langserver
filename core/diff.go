@@ -2,7 +2,7 @@ package core
 
 import (
 	"github.com/aymanbagabas/go-udiff"
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/types"
 )
 
 func ComputeEdits(name types.DocumentURI, before, after string) ([]types.TextEdit, error) {

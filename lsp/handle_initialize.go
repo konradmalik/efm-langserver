@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/types"
 )
 
 func (h *LspHandler) HandleInitialize(_ context.Context, _ *jsonrpc2.Conn, req *jsonrpc2.Request) (result types.InitializeResult, err error) {

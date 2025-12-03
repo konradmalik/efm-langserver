@@ -1,6 +1,6 @@
 config
 .vim-lsp-settings
-efm-langserver
-efm-langserver.exe
+flint-ls
+flint-ls.exe
 .direnv
 result

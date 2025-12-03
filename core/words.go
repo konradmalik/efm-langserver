@@ -5,7 +5,7 @@ import (
 	"unicode"
 	"unicode/utf16"
 
-	"github.com/konradmalik/efm-langserver/types"
+	"github.com/konradmalik/flint-ls/types"
 )
 
 const (

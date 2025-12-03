@@ -1,4 +1,4 @@
-module github.com/konradmalik/efm-langserver
+module github.com/konradmalik/flint-ls
 
 go 1.24
 

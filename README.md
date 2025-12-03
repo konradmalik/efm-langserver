@@ -1,6 +1,6 @@
-# efm-langserver
+# flint-ls
 
-[![Actions Status](https://github.com/konradmalik/efm-langserver/workflows/CI/badge.svg)](https://github.com/konradmalik/efm-langserver/actions)
+[![Actions Status](https://github.com/konradmalik/flint-ls/workflows/CI/badge.svg)](https://github.com/konradmalik/flint-ls/actions)
 
 General purpose Language Server that can spawn formatters and linters.
 
@@ -8,9 +8,9 @@ General purpose Language Server that can spawn formatters and linters.
 
 ## Description
 
-This is a fork [efm-langserver](https://github.com/mattn/efm-langserver) that will maintain and develop separately.
+This is a fork of [efm-langserver](https://github.com/mattn/efm-langserver) that will maintain and develop separately.
 It is a cleaned up and simplified version of the original.
-It supports the original configuration but only for formatting and linting. No code actions, completions, hover etc.
+It supports a subset of original configuration - only for formatting and linting. No code actions, completions, hover etc.
 
 Notable changes from the original:
 
@@ -25,7 +25,7 @@ Notable changes from the original:
 - fixed and applied sane defaults for options like `LintAfterOpen`, `LintOnSave` etc.
 - removed explicit support for `LintWorkspace` (linters that lint the whole workspace and do not need filename)
     - it may be implemented back in the future if needed, but I've no usage of such linters, and a quick search through [`creativenull/efmls-configs-nvim`](https://github.com/creativenull/efmls-configs-nvim) showed no usage of this property
-    - tracked in [#11](https://github.com/konradmalik/efm-langserver/issues/11)
+    - tracked in [#11](https://github.com/konradmalik/flint-ls/issues/11)
 
 ## Sections
 
@@ -49,7 +49,7 @@ Notable changes from the original:
 ## Installation
 
 ```console
-go install github.com/konradmalik/efm-langserver@latest
+go install github.com/konradmalik/flint-ls@latest
 ```
 
 or via `nix`. Flake provided in this repo.
@@ -61,7 +61,7 @@ nix build
 ## Usage
 
 ```text
-Usage of efm-langserver:
+Usage of flint-ls:
   -h    Show help
   -logfile string
         File to save logs into. If provided stderr won't be used anymore.
@@ -80,7 +80,7 @@ properties (note though that per language configuration will be overwritten as a
 
 `DidChangeConfiguration` cannot set `LogFile`.
 
-`efm-langserver` does not include formatters/linters for any language. You must install these manually,
+`flint-ls` does not include formatters/linters for any language. You must install these manually,
 e.g.
 
 - lua: [LuaFormatter](https://github.com/Koihik/LuaFormatter)
@@ -177,7 +177,7 @@ Neovim's built-in LSP client sends `DidChangeConfiguration`.
 `init.lua` example (`settings` follows [`schema.md`](schema.md)):
 
 ```lua
-require "lspconfig".efm.setup {
+require "lspconfig".flint_ls.setup {
     init_options = {documentFormatting = true},
     settings = {
         rootMarkers = {".git/"},
@@ -220,8 +220,8 @@ coc-settings.json
 ```jsonc
   // languageserver
   "languageserver": {
-    "efm": {
-      "command": "efm-langserver",
+    "flint-ls": {
+      "command": "flint-ls",
       "args": [],
       "filetypes": ["vim", "eruby", "markdown", "yaml"]
     }
@@ -237,7 +237,7 @@ Example `settings.json` (change to fit your local installs):
 ```json
 {
     "glspc.languageId": "lua",
-    "glspc.serverCommand": "/Users/me/.local/share/nvim/mason/bin/efm-langserver",
+    "glspc.serverCommand": "/Users/me/.local/share/nvim/mason/bin/flint-ls",
     "glspc.pathPrepend": "/Users/me/.local/share/rtx/installs/python/3.11.4/bin:/Users/me/.local/share/rtx/installs/node/20.3.1/bin"
 }
 ```
@@ -247,13 +247,13 @@ Example `settings.json` (change to fit your local installs):
 `~/.config/helix/languages.toml`
 
 ```toml
-[language-server.efm]
-command = "efm-langserver"
+[language-server.flint-ls]
+command = "flint-ls"
 
 [[language]]
 name = "typescript"
 language-servers = [
-  { name = "efm", only-features = [ "diagnostics", "format" ] },
+  { name = "flint-ls", only-features = [ "diagnostics", "format" ] },
   { name = "typescript-language-server", except-features = [ "format" ] }
 ]
 ```
@@ -265,9 +265,9 @@ Open `Preferences: LSP Settings` command from the Command Palette (Ctrl+Shift+P)
 ```
 {
 	"clients": {
-	    "efm-langserver": {
+	    "flint-ls": {
 	      "enabled": true,
-	      "command": ["efm-langserver"],
+	      "command": ["flint-ls"],
 	      "selector": "source.c | source.php | source.python" // see https://www.sublimetext.com/docs/3/selectors.html
 	    }
   	}
@@ -277,17 +277,17 @@ Open `Preferences: LSP Settings` command from the Command Palette (Ctrl+Shift+P)
 ### Configuration for [vim-lsp](https://github.com/prabirshrestha/vim-lsp/)
 
 ```vim
-augroup LspEFM
+augroup LspFlint
   au!
   autocmd User lsp_setup call lsp#register_server({
-      \ 'name': 'efm-langserver',
-      \ 'cmd': {server_info->['efm-langserver']},
+      \ 'name': 'flint-ls',
+      \ 'cmd': {server_info->['flint-ls']},
       \ 'allowlist': ['vim', 'eruby', 'markdown', 'yaml'],
       \ })
 augroup END
 ```
 
-[vim-lsp-settings](https://github.com/mattn/vim-lsp-settings) provide installer for efm-langserver.
+[vim-lsp-settings](https://github.com/mattn/vim-lsp-settings) provide installer for flint-ls.
 
 ### Configuration for [Eglot](https://github.com/joaotavora/eglot) (Emacs)
 
@@ -296,7 +296,7 @@ Add to eglot-server-programs with major mode you want.
 ```lisp
 (with-eval-after-load 'eglot
   (add-to-list 'eglot-server-programs
-    `(markdown-mode . ("efm-langserver"))))
+    `(markdown-mode . ("flint-ls"))))
 ```
 
 ## License
@@ -305,5 +305,5 @@ MIT
 
 ## Authors
 
-- Yasuhiro Matsumoto (a.k.a. mattn) before 2025-04-29 (original efm-langserver author)
+- Yasuhiro Matsumoto (a.k.a. mattn) before 2025-04-29 (original flint-ls author)
 - Konrad Malik after 2025-04-29 (author and maintainer of this fork)
