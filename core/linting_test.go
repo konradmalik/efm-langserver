@@ -857,21 +857,17 @@ func (h *LangHandler) getAllPublishDiagnosticsParamsForUriWithEvent(t *testing.T
 		defer close(diagnosticsChan)
 		defer close(errorsChan)
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for e := range errorsChan {
 				errorsOut = append(errorsOut, e.Error())
 			}
-		}()
+		})
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for d := range diagnosticsChan {
 				diagnosticsOut = append(diagnosticsOut, d)
 			}
-		}()
+		})
 
 		err := h.RunAllLinters(t.Context(), uri, event, diagnosticsChan, errorsChan)
 		if err != nil {

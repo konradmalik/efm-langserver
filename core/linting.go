@@ -38,9 +38,7 @@ func (h *LangHandler) RunAllLinters(
 
 	var wg sync.WaitGroup
 	for _, config := range configs {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			rootPath := h.findRootPath(f.NormalizedFilename, config)
 			diagnostics, err := lintDocument(ctx, rootPath, *f, config)
 			if err != nil {
@@ -54,7 +52,7 @@ func (h *LangHandler) RunAllLinters(
 				Diagnostics: diagnostics,
 				Version:     f.Version,
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
