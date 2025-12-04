@@ -539,12 +539,12 @@ func TestGetSeverity(t *testing.T) {
 		defaultSeverity types.DiagnosticSeverity
 		want            types.DiagnosticSeverity
 	}{
-		{"Error type", 'E', nil, 0, types.Error},
-		{"Warning type", 'W', nil, 0, types.Warning},
-		{"Info type", 'I', nil, 0, types.Information},
-		{"Hint type", 'N', nil, 0, types.Hint},
-		{"Default severity overrides", 'X', nil, types.Warning, types.Warning},
-		{"Category map remap", 'X', map[string]string{"X": "W"}, 0, types.Warning},
+		{"Error type", 'E', nil, 0, types.DiagError},
+		{"Warning type", 'W', nil, 0, types.DiagWarning},
+		{"Info type", 'I', nil, 0, types.DiagInformation},
+		{"Hint type", 'N', nil, 0, types.DiagHint},
+		{"Default severity overrides", 'X', nil, types.DiagWarning, types.DiagWarning},
+		{"Category map remap", 'X', map[string]string{"X": "W"}, 0, types.DiagWarning},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -639,7 +639,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			},
 			expected: types.Diagnostic{
 				Message:  "world bad",
-				Severity: types.Error,
+				Severity: types.DiagError,
 				Range: types.Range{
 					Start: types.Position{Line: 0, Character: 6},
 					End:   types.Position{Line: 0, Character: 11},
@@ -660,7 +660,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			},
 			expected: types.Diagnostic{
 				Message:  "world bad",
-				Severity: types.Error,
+				Severity: types.DiagError,
 				Range: types.Range{
 					Start: types.Position{Line: 0, Character: 6},
 					End:   types.Position{Line: 0, Character: 11},
@@ -681,7 +681,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			},
 			expected: types.Diagnostic{
 				Message:  "golang bad",
-				Severity: types.Error,
+				Severity: types.DiagError,
 				Range: types.Range{
 					Start: types.Position{Line: 1, Character: 0},
 					End:   types.Position{Line: 1, Character: 6},
@@ -702,7 +702,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			},
 			expected: types.Diagnostic{
 				Message:  "golang not rulezz",
-				Severity: types.Error,
+				Severity: types.DiagError,
 				Range: types.Range{
 					Start: types.Position{Line: 1, Character: 0},
 					End:   types.Position{Line: 1, Character: 0},
@@ -723,7 +723,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			},
 			expected: types.Diagnostic{
 				Message:  "world bad",
-				Severity: types.Error,
+				Severity: types.DiagError,
 				Range: types.Range{
 					Start: types.Position{Line: 1, Character: 6},
 					End:   types.Position{Line: 1, Character: 7},
@@ -744,7 +744,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			},
 			expected: types.Diagnostic{
 				Message:  "world bad",
-				Severity: types.Error,
+				Severity: types.DiagError,
 				Range: types.Range{
 					Start: types.Position{Line: 0, Character: 7},
 					End:   types.Position{Line: 0, Character: 12},
@@ -765,7 +765,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			},
 			expected: types.Diagnostic{
 				Message:  "world bad",
-				Severity: types.Error,
+				Severity: types.DiagError,
 				Range: types.Range{
 					Start: types.Position{Line: 0, Character: 0},
 					End:   types.Position{Line: 0, Character: 0},
@@ -787,7 +787,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			},
 			expected: types.Diagnostic{
 				Message:  "bad",
-				Severity: types.Error,
+				Severity: types.DiagError,
 				Range: types.Range{
 					Start: types.Position{Line: 2, Character: 0},
 					End:   types.Position{Line: 4, Character: 0},
@@ -810,7 +810,7 @@ func TestParseEfmEntryToDiagnostic(t *testing.T) {
 			},
 			expected: types.Diagnostic{
 				Message:  "bad",
-				Severity: types.Error,
+				Severity: types.DiagError,
 				Range: types.Range{
 					Start: types.Position{Line: 1, Character: 4},
 					End:   types.Position{Line: 1, Character: 8},

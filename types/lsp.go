@@ -23,10 +23,11 @@ type MessageType int
 
 const (
 	_ MessageType = iota
-	LogError
-	LogWarning
-	LogInfo
-	LogLog
+	MessError
+	MessWarning
+	MessInfo
+	MessLog
+	MessDebug
 )
 
 type TextDocumentSyncKind int
@@ -111,10 +112,10 @@ type DiagnosticRelatedInformation struct {
 type DiagnosticSeverity int
 
 const (
-	Error DiagnosticSeverity = iota + 1
-	Warning
-	Information
-	Hint
+	DiagError DiagnosticSeverity = iota + 1
+	DiagWarning
+	DiagInformation
+	DiagHint
 )
 
 type Diagnostic struct {

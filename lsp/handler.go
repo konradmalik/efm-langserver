@@ -117,13 +117,13 @@ func (h *LspHandler) ScheduleLinting(notifier LspNotifier, uri types.DocumentURI
 
 			go func() {
 				for e := range errors {
-					notifier.LogMessage(ctx, types.LogError, e.Error())
+					notifier.LogMessage(ctx, types.MessError, e.Error())
 				}
 			}()
 
 			err := h.langHandler.RunAllLinters(ctx, uri, eventType, diagnostics, errors)
 			if err != nil {
-				notifier.LogMessage(ctx, types.LogError, err.Error())
+				notifier.LogMessage(ctx, types.MessError, err.Error())
 			}
 		}()
 	})

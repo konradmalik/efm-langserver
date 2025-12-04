@@ -102,20 +102,20 @@ func getSeverity(typ rune, categoryMap map[string]string, defaultSeverity types.
 		typ = []rune(categoryMap[string(typ)])[0]
 	}
 
-	severity := types.Error
+	severity := types.DiagError
 	if defaultSeverity != 0 {
 		severity = defaultSeverity
 	}
 
 	switch typ {
 	case 'E', 'e':
-		severity = types.Error
+		severity = types.DiagError
 	case 'W', 'w':
-		severity = types.Warning
+		severity = types.DiagWarning
 	case 'I', 'i':
-		severity = types.Information
+		severity = types.DiagInformation
 	case 'N', 'n':
-		severity = types.Hint
+		severity = types.DiagHint
 	}
 	return severity
 }
