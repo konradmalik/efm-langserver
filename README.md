@@ -17,6 +17,9 @@ Notable changes from the original:
 - no config.yaml, settings need to be passed via DidChangeConfiguration
 - only linting and formatting (for now)
 - all formatters must support stdin, non-stdin formatters won't work. Option `formatStdin` was removed.
+- fixed behavior of `LintIgnoreExitCode` - when true, output is parsed for errors even if exit code is 0. Previously
+  each lint command that resulted in exit code 0 was considered a problem, but exit code 0 is ok in situations when
+  there's no lint issues.
 - better diffs handling for formatting (no more "format twice to remove an extra newline")
     - external, maintained diff library used for that
 - support for errorformat's end line and end column

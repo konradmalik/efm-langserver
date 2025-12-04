@@ -74,6 +74,69 @@ func TestLintFileMatched(t *testing.T) {
 	assert.Equal(t, d[0].Message, "No it is normal!")
 }
 
+func TestLintNoIgnoreExitCodeIsRespected(t *testing.T) {
+	base, _ := os.Getwd()
+	file := filepath.Join(base, "foo")
+	uri := ParseLocalFileToURI(file)
+
+	h := &LangHandler{
+		RootPath: base,
+		configs: map[string][]types.Language{
+			"vim": {
+				{
+					LintCommand:        `echo ` + file + `:2:No it is normal!`,
+					LintIgnoreExitCode: false,
+					LintStdin:          true,
+				},
+			},
+		},
+		files: map[types.DocumentURI]*fileRef{
+			uri: {
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
+				Uri:                uri,
+			},
+		},
+	}
+
+	d, err := h.getAllDiagnosticsForUri(t, uri)
+	assert.NoError(t, err)
+	assert.Len(t, d, 0)
+}
+
+func TestCommandErrors(t *testing.T) {
+	base, _ := os.Getwd()
+	file := filepath.Join(base, "foo")
+	uri := ParseLocalFileToURI(file)
+
+	h := &LangHandler{
+		RootPath: base,
+		configs: map[string][]types.Language{
+			"vim": {
+				{
+					LintCommand:        `/some/bad/binary`,
+					LintIgnoreExitCode: true,
+					LintStdin:          true,
+				},
+			},
+		},
+		files: map[types.DocumentURI]*fileRef{
+			uri: {
+				LanguageID:         "vim",
+				Text:               "scriptencoding utf-8\nabnormal!\n",
+				NormalizedFilename: file,
+				Uri:                uri,
+			},
+		},
+	}
+
+	d, err := h.getAllDiagnosticsForUri(t, uri)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "127")
+	assert.Len(t, d, 0)
+}
+
 func TestDiagnosticsResetOnEachRun(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")

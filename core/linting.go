@@ -14,6 +14,7 @@ import (
 	"github.com/reviewdog/errorformat"
 )
 
+var unknownExitCode = -999
 var defaultLintFormats = []string{"%f:%l:%m", "%f:%l:%c:%m"}
 
 func (h *LangHandler) RunAllLinters(
@@ -172,15 +173,39 @@ func buildLintCommandString(ctx context.Context, rootPath string, f fileRef, con
 
 func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
 	lintOutput, lintCmdError := cmd.CombinedOutput()
-	// Most of lint tools exit with non-zero value. But some commands
-	// return with zero value. We can not handle the output is real result
-	// or output of usage. So flint-ls ignore that command exiting
-	// with zero-value. So if you want to handle the command which exit
-	// with zero value, please specify lint-ignore-exit-code.
-	if !config.LintIgnoreExitCode && lintCmdError == nil {
-		return lintOutput, fmt.Errorf("command `%s` exit with zero. Probably you forgot to specify `lint-ignore-exit-code: true`", config.LintCommand)
+
+	isExitCode0 := lintCmdError == nil
+	if isExitCode0 {
+		// LintIgnoreExitCode means despite lint returning 0, we still parse for errors
+		if config.LintIgnoreExitCode {
+			return lintOutput, nil
+		}
+		return nil, nil
 	}
+
+	code := parseErrorExitCode(lintCmdError)
+	switch {
+	case code == unknownExitCode:
+		return lintOutput, lintCmdError
+	case code < 0:
+		// When the context is canceled, the process is killed,
+		// and the exit code is -1, but with go anything < 0 means some interrupt
+		return nil, nil
+	case code == 126:
+	case code == 127:
+		// no binary/executable
+		return nil, lintCmdError
+	}
+
 	return lintOutput, nil
+}
+
+func parseErrorExitCode(err error) int {
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok {
+		return unknownExitCode
+	}
+	return exitErr.ExitCode()
 }
 
 func replaceStdinInEntryFilename(entryFilename string, config *types.Language, fname string) string {
