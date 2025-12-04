@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	flagPlaceholder  = "$1"
 	inputPlaceholder = "${INPUT}"
 	carriageReturn   = "\r"
 )

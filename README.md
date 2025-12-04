@@ -125,8 +125,6 @@ Example
 
 ```go
 type Config struct {
-	Version        int                    `json:"version,omitempty"`
-	LogLevel       int                    `json:"logLevel,omitempty"`
 	Languages      *map[string][]Language `json:"languages,omitempty"`
 	RootMarkers    *[]string              `json:"rootMarkers,omitempty"`
 	LintDebounce   time.Duration          `json:"lintDebounce,omitempty"`
@@ -134,12 +132,16 @@ type Config struct {
 }
 
 type Language struct {
-	Prefix             string             `json:"prefix,omitempty"`
-	LintFormats        []string           `json:"lintFormats,omitempty"`
-	LintStdin          bool               `json:"lintStdin,omitempty"`
+	Env           []string `json:"env,omitempty"`
+	RootMarkers   []string `json:"rootMarkers,omitempty"`
+	RequireMarker bool     `json:"requireMarker,omitempty"`
+	// prefix for lint message
+	Prefix      string   `json:"prefix,omitempty"`
+	LintFormats []string `json:"lintFormats,omitempty"`
+	LintStdin   bool     `json:"lintStdin,omitempty"`
 	// warning: this will be subtracted from the line reported by the linter
-	LintOffset         int                `json:"lintOffset,omitempty"`
- 	// warning: this will be added to the column reported by the linter
+	LintOffset int `json:"lintOffset,omitempty"`
+	// warning: this will be added to the column reported by the linter
 	LintOffsetColumns  int                `json:"lintOffsetColumns,omitempty"`
 	LintCommand        string             `json:"lintCommand,omitempty"`
 	LintIgnoreExitCode bool               `json:"lintIgnoreExitCode,omitempty"`
@@ -151,12 +153,9 @@ type Language struct {
 	// defaults to true if not provided as a sanity default
 	LintOnChange *bool `json:"lintOnChange,omitempty"`
 	// defaults to true if not provided as a sanity default
-	LintOnSave     *bool    `json:"lintOnSave,omitempty"`
-	FormatCommand  string   `json:"formatCommand,omitempty"`
-	FormatCanRange bool     `json:"formatCanRange,omitempty"`
-	Env            []string `json:"env,omitempty"`
-	RootMarkers    []string `json:"rootMarkers,omitempty"`
-	RequireMarker  bool     `json:"requireMarker,omitempty"`
+	LintOnSave     *bool  `json:"lintOnSave,omitempty"`
+	FormatCommand  string `json:"formatCommand,omitempty"`
+	FormatCanRange bool   `json:"formatCanRange,omitempty"`
 }
 ```
 

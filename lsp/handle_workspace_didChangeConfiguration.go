@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/konradmalik/flint-ls/logs"
 	"github.com/konradmalik/flint-ls/types"
 	"github.com/sourcegraph/jsonrpc2"
 )
@@ -19,7 +18,6 @@ func (h *LspHandler) HandleWorkspaceDidChangeConfiguration(_ context.Context, _ 
 		return nil, err
 	}
 
-	logs.Log.SetLevel(logs.LogLevel(params.Settings.LogLevel))
 	h.UpdateConfiguration(&params.Settings)
 	return nil, nil
 }

@@ -127,11 +127,6 @@
       },
       "type": "array"
     },
-    "log-level": {
-      "description": "log level",
-      "minimum": 1,
-      "type": "number"
-    },
     "format-debounce": {
       "description": "duration to debounce calls to the formatter executable. e.g: 1s",
       "type": "string"
