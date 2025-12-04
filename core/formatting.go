@@ -141,7 +141,7 @@ func applyRangePlaceholders(command string, rng *types.Range, text string) (stri
 }
 
 func buildFormatCommandString(rootPath string, filename string, textToFormat string, options types.FormattingOptions, rng *types.Range, command string) (string, error) {
-	command = replaceCommandInputFilename(command, filename, rootPath)
+	command = replaceMagicStrings(command, filename, rootPath)
 
 	var err error
 	command, err = applyOptionsPlaceholders(command, options)

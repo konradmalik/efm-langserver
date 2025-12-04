@@ -179,14 +179,14 @@ func isStdinPlaceholder(s string) bool {
 	}
 }
 
-func replaceCommandInputFilename(command, fname, rootPath string) string {
+func replaceMagicStrings(command, fname, rootPath string) string {
 	ext := filepath.Ext(fname)
 	ext = strings.TrimPrefix(ext, ".")
 
 	command = strings.ReplaceAll(command, inputPlaceholder, escapeBrackets(fname))
-	command = strings.ReplaceAll(command, "${FILEEXT}", ext)
-	command = strings.ReplaceAll(command, "${FILENAME}", escapeBrackets(filepath.FromSlash(fname)))
-	command = strings.ReplaceAll(command, "${ROOT}", escapeBrackets(rootPath))
+	command = strings.ReplaceAll(command, fileextPlaceholder, ext)
+	command = strings.ReplaceAll(command, filenamePlaceholder, escapeBrackets(filepath.FromSlash(fname)))
+	command = strings.ReplaceAll(command, rootPlaceholder, escapeBrackets(rootPath))
 
 	return command
 }

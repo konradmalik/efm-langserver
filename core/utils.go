@@ -12,8 +12,11 @@ import (
 )
 
 const (
-	inputPlaceholder = "${INPUT}"
-	carriageReturn   = "\r"
+	inputPlaceholder    = "${INPUT}"
+	fileextPlaceholder  = "${FILEEXT}"
+	filenamePlaceholder = "${FILENAME}"
+	rootPlaceholder     = "${ROOT}"
+	carriageReturn      = "\r"
 )
 
 func normalizedFilenameFromUri(uri types.DocumentURI) (string, error) {

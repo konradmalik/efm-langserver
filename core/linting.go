@@ -62,7 +62,7 @@ func (h *LangHandler) RunAllLinters(
 
 func lintDocument(ctx context.Context, rootPath string, f fileRef, config types.Language) ([]types.Diagnostic, error) {
 	diagnostics := make([]types.Diagnostic, 0)
-	cmdStr := buildLintCommandString(ctx, rootPath, f, config)
+	cmdStr := buildLintCommandString(rootPath, f, config)
 	cmd := buildExecCmd(ctx, cmdStr, rootPath, f.Text, config, config.LintStdin)
 
 	lintOutput, err := runLintCommand(cmd, &config)
@@ -163,12 +163,12 @@ func buildErrorformats(configFormats []string) (*errorformat.Errorformat, error)
 	return efms, nil
 }
 
-func buildLintCommandString(ctx context.Context, rootPath string, f fileRef, config types.Language) string {
+func buildLintCommandString(rootPath string, f fileRef, config types.Language) string {
 	command := config.LintCommand
 	if !config.LintStdin && !strings.Contains(command, inputPlaceholder) {
 		command = command + " " + inputPlaceholder
 	}
-	return replaceCommandInputFilename(command, f.NormalizedFilename, rootPath)
+	return replaceMagicStrings(command, f.NormalizedFilename, rootPath)
 }
 
 func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
