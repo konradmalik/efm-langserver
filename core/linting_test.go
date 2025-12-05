@@ -9,16 +9,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/konradmalik/flint-ls/logs"
 	"github.com/konradmalik/flint-ls/types"
 	"github.com/reviewdog/errorformat"
 	"github.com/stretchr/testify/assert"
 )
-
-var _ = func() string {
-	logs.Log.SetLevel(logs.Debug)
-	return "a"
-}()
 
 func TestLintNoLinter(t *testing.T) {
 	h := &LangHandler{
@@ -32,7 +26,7 @@ func TestLintNoLinter(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestLintNoFileMatched(t *testing.T) {
+func TestLintNoSuchDocument(t *testing.T) {
 	h := &LangHandler{
 		configs: map[string][]types.Language{},
 		files: map[types.DocumentURI]*fileRef{
@@ -60,10 +54,18 @@ func TestLinting(t *testing.T) {
 		name              string
 		langConfig        types.Language
 		expectErr         bool
-		errContains       string
 		expectDiagnostics int
 		verify            func(t *testing.T, d []types.Diagnostic)
 	}{
+		{
+			name: "NoFileMatched",
+			langConfig: types.Language{
+				LintCommand:        `echo nofile:2:No it is normal!`,
+				LintIgnoreExitCode: true,
+				LintStdin:          true,
+			},
+			expectDiagnostics: 0,
+		},
 		{
 			name: "FileMatched",
 			langConfig: types.Language{
@@ -71,7 +73,6 @@ func TestLinting(t *testing.T) {
 				LintIgnoreExitCode: true,
 				LintStdin:          true,
 			},
-			expectErr:         false,
 			expectDiagnostics: 1,
 			verify: func(t *testing.T, d []types.Diagnostic) {
 				assert.Equal(t, 1, d[0].Range.Start.Line)
@@ -87,29 +88,15 @@ func TestLinting(t *testing.T) {
 				LintIgnoreExitCode: false,
 				LintStdin:          true,
 			},
-			expectErr:         false,
 			expectDiagnostics: 0,
 		},
 		{
-			name: "CommandErrorsAbsolute",
+			name: "CancelledErrorCodeIsIgnored",
 			langConfig: types.Language{
-				LintCommand:        `/some/bad/binary`,
+				LintCommand:        `exit -1`,
 				LintIgnoreExitCode: true,
 				LintStdin:          true,
 			},
-			expectErr:         true,
-			errContains:       "127",
-			expectDiagnostics: 0,
-		},
-		{
-			name: "CommandErrorsRelative",
-			langConfig: types.Language{
-				LintCommand:        `some/bad/binary`,
-				LintIgnoreExitCode: true,
-				LintStdin:          true,
-			},
-			expectErr:         true,
-			errContains:       "127",
 			expectDiagnostics: 0,
 		},
 	}
@@ -127,16 +114,7 @@ func TestLinting(t *testing.T) {
 			}
 
 			d, err := h.getAllDiagnosticsForUri(t, uri)
-
-			if tt.expectErr {
-				assert.Error(t, err)
-				if tt.errContains != "" {
-					assert.ErrorContains(t, err, tt.errContains)
-				}
-			} else {
-				assert.NoError(t, err)
-			}
-
+			assert.NoError(t, err)
 			assert.Len(t, d, tt.expectDiagnostics)
 
 			if tt.verify != nil {

@@ -193,14 +193,6 @@ func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
 		return nil, nil
 	}
 
-	logs.Log.Logln(logs.Error, "got error like this:")
-	logs.Log.Logln(logs.Error, lintCmdError.Error())
-	if isSystemError(lintCmdError) {
-		logs.Log.Logln(logs.Error, "was recognized as system")
-		return nil, lintCmdError
-	}
-	logs.Log.Logln(logs.Error, "was not recognized as system")
-
 	return lintOutput, nil
 }
 
