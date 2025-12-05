@@ -38,10 +38,24 @@ const (
 	TDSKIncremental
 )
 
+type TextDocumentSyncOptions struct {
+	OpenClose bool                 `json:"openClose,omitempty"`
+	Change    TextDocumentSyncKind `json:"change,omitempty"`
+}
+
+type PositionEncodingKind string
+
+const (
+	UTF8  PositionEncodingKind = "utf-8"
+	UTF16 PositionEncodingKind = "utf-16"
+	UTF32 PositionEncodingKind = "utf-32"
+)
+
 type ServerCapabilities struct {
-	TextDocumentSync           TextDocumentSyncKind `json:"textDocumentSync,omitempty"`
-	DocumentFormattingProvider bool                 `json:"documentFormattingProvider,omitempty"`
-	RangeFormattingProvider    bool                 `json:"documentRangeFormattingProvider,omitempty"`
+	PositionEncoding           PositionEncodingKind    `json:"positionEncoding,omitempty"`
+	TextDocumentSync           TextDocumentSyncOptions `json:"textDocumentSync,omitempty"`
+	DocumentFormattingProvider bool                    `json:"documentFormattingProvider,omitempty"`
+	RangeFormattingProvider    bool                    `json:"documentRangeFormattingProvider,omitempty"`
 }
 
 type TextDocumentItem struct {

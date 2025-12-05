@@ -73,7 +73,11 @@ func (h *LangHandler) Initialize(params types.InitializeParams) (types.Initializ
 
 	return types.InitializeResult{
 		Capabilities: types.ServerCapabilities{
-			TextDocumentSync:           types.TDSKFull,
+			PositionEncoding: types.UTF16,
+			TextDocumentSync: types.TextDocumentSyncOptions{
+				OpenClose: true,
+				Change:    types.TDSKFull,
+			},
 			DocumentFormattingProvider: hasFormatCommand,
 			RangeFormattingProvider:    hasRangeFormatCommand,
 		},
