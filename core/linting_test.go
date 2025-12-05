@@ -9,10 +9,16 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/konradmalik/flint-ls/logs"
 	"github.com/konradmalik/flint-ls/types"
 	"github.com/reviewdog/errorformat"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ = func() string {
+	logs.Log.SetLevel(logs.Debug)
+	return "a"
+}()
 
 func TestLintNoLinter(t *testing.T) {
 	h := &LangHandler{
@@ -38,103 +44,106 @@ func TestLintNoFileMatched(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestLintFileMatched(t *testing.T) {
+func TestLinting(t *testing.T) {
 	base, _ := os.Getwd()
 	file := filepath.Join(base, "foo")
 	uri := ParseLocalFileToURI(file)
 
-	h := &LangHandler{
-		RootPath: base,
-		configs: map[string][]types.Language{
-			"vim": {
-				{
-					LintCommand:        `echo ` + file + `:2:No it is normal!`,
-					LintIgnoreExitCode: true,
-					LintStdin:          true,
-				},
+	commonFileRef := &fileRef{
+		LanguageID:         "vim",
+		Text:               "scriptencoding utf-8\nabnormal!\n",
+		NormalizedFilename: file,
+		Uri:                uri,
+	}
+
+	tests := []struct {
+		name              string
+		langConfig        types.Language
+		expectErr         bool
+		errContains       string
+		expectDiagnostics int
+		verify            func(t *testing.T, d []types.Diagnostic)
+	}{
+		{
+			name: "FileMatched",
+			langConfig: types.Language{
+				LintCommand:        `echo ` + file + `:2:No it is normal!`,
+				LintIgnoreExitCode: true,
+				LintStdin:          true,
+			},
+			expectErr:         false,
+			expectDiagnostics: 1,
+			verify: func(t *testing.T, d []types.Diagnostic) {
+				assert.Equal(t, 1, d[0].Range.Start.Line)
+				assert.Equal(t, 0, d[0].Range.Start.Character)
+				assert.Equal(t, types.DiagnosticSeverity(1), d[0].Severity)
+				assert.Equal(t, "No it is normal!", d[0].Message)
 			},
 		},
-		files: map[types.DocumentURI]*fileRef{
-			uri: {
-				LanguageID:         "vim",
-				Text:               "scriptencoding utf-8\nabnormal!\n",
-				NormalizedFilename: file,
-				Uri:                uri,
+		{
+			name: "NoIgnoreExitCodeIsRespected",
+			langConfig: types.Language{
+				LintCommand:        `echo ` + file + `:2:No it is normal!`,
+				LintIgnoreExitCode: false,
+				LintStdin:          true,
 			},
+			expectErr:         false,
+			expectDiagnostics: 0,
+		},
+		{
+			name: "CommandErrorsAbsolute",
+			langConfig: types.Language{
+				LintCommand:        `/some/bad/binary`,
+				LintIgnoreExitCode: true,
+				LintStdin:          true,
+			},
+			expectErr:         true,
+			errContains:       "127",
+			expectDiagnostics: 0,
+		},
+		{
+			name: "CommandErrorsRelative",
+			langConfig: types.Language{
+				LintCommand:        `some/bad/binary`,
+				LintIgnoreExitCode: true,
+				LintStdin:          true,
+			},
+			expectErr:         true,
+			errContains:       "127",
+			expectDiagnostics: 0,
 		},
 	}
 
-	d, err := h.getAllDiagnosticsForUri(t, uri)
-	assert.NoError(t, err)
-
-	assert.Len(t, d, 1)
-	assert.Equal(t, d[0].Range.Start.Line, 1)
-	assert.Equal(t, d[0].Range.Start.Character, 0)
-	assert.Equal(t, d[0].Severity, types.DiagnosticSeverity(1))
-	assert.Equal(t, d[0].Message, "No it is normal!")
-}
-
-func TestLintNoIgnoreExitCodeIsRespected(t *testing.T) {
-	base, _ := os.Getwd()
-	file := filepath.Join(base, "foo")
-	uri := ParseLocalFileToURI(file)
-
-	h := &LangHandler{
-		RootPath: base,
-		configs: map[string][]types.Language{
-			"vim": {
-				{
-					LintCommand:        `echo ` + file + `:2:No it is normal!`,
-					LintIgnoreExitCode: false,
-					LintStdin:          true,
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &LangHandler{
+				RootPath: base,
+				configs: map[string][]types.Language{
+					"vim": {tt.langConfig},
 				},
-			},
-		},
-		files: map[types.DocumentURI]*fileRef{
-			uri: {
-				LanguageID:         "vim",
-				Text:               "scriptencoding utf-8\nabnormal!\n",
-				NormalizedFilename: file,
-				Uri:                uri,
-			},
-		},
-	}
-
-	d, err := h.getAllDiagnosticsForUri(t, uri)
-	assert.NoError(t, err)
-	assert.Len(t, d, 0)
-}
-
-func TestCommandErrors(t *testing.T) {
-	base, _ := os.Getwd()
-	file := filepath.Join(base, "foo")
-	uri := ParseLocalFileToURI(file)
-
-	h := &LangHandler{
-		RootPath: base,
-		configs: map[string][]types.Language{
-			"vim": {
-				{
-					LintCommand:        `/some/bad/binary`,
-					LintIgnoreExitCode: true,
-					LintStdin:          true,
+				files: map[types.DocumentURI]*fileRef{
+					uri: commonFileRef,
 				},
-			},
-		},
-		files: map[types.DocumentURI]*fileRef{
-			uri: {
-				LanguageID:         "vim",
-				Text:               "scriptencoding utf-8\nabnormal!\n",
-				NormalizedFilename: file,
-				Uri:                uri,
-			},
-		},
-	}
+			}
 
-	d, err := h.getAllDiagnosticsForUri(t, uri)
-	assert.Error(t, err)
-	assert.ErrorContains(t, err, "127")
-	assert.Len(t, d, 0)
+			d, err := h.getAllDiagnosticsForUri(t, uri)
+
+			if tt.expectErr {
+				assert.Error(t, err)
+				if tt.errContains != "" {
+					assert.ErrorContains(t, err, tt.errContains)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Len(t, d, tt.expectDiagnostics)
+
+			if tt.verify != nil {
+				tt.verify(t, d)
+			}
+		})
+	}
 }
 
 func TestDiagnosticsResetOnEachRun(t *testing.T) {

@@ -184,16 +184,22 @@ func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
 	}
 
 	code := parseErrorExitCode(lintCmdError)
-	switch {
-	case code == unknownExitCode:
+	if code == unknownExitCode {
 		return lintOutput, lintCmdError
-	case code < 0:
+	}
+
+	if code < 0 {
 		// In go, anything < 0 means some interrupt (canceled, killed etc.)
 		return nil, nil
-	case code == commandNotFoundCode:
-		// no binary/executable
+	}
+
+	logs.Log.Logln(logs.Error, "got error like this:")
+	logs.Log.Logln(logs.Error, lintCmdError.Error())
+	if isSystemError(lintCmdError) {
+		logs.Log.Logln(logs.Error, "was recognized as system")
 		return nil, lintCmdError
 	}
+	logs.Log.Logln(logs.Error, "was not recognized as system")
 
 	return lintOutput, nil
 }
