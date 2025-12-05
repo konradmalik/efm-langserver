@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	shell     = "cmd"
-	shellFlag = "/c"
+	shell               = "cmd"
+	shellFlag           = "/c"
+	commandNotFoundCode = 9009
 )
 
 func comparePaths(path1, path2 string) bool {

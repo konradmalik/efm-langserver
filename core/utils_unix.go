@@ -3,8 +3,9 @@
 package core
 
 const (
-	shell     = "sh"
-	shellFlag = "-c"
+	shell               = "sh"
+	shellFlag           = "-c"
+	commandNotFoundCode = 127
 )
 
 func comparePaths(path1, path2 string) bool {

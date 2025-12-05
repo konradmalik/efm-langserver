@@ -188,11 +188,9 @@ func runLintCommand(cmd *exec.Cmd, config *types.Language) ([]byte, error) {
 	case code == unknownExitCode:
 		return lintOutput, lintCmdError
 	case code < 0:
-		// When the context is canceled, the process is killed,
-		// and the exit code is -1, but with go anything < 0 means some interrupt
+		// In go, anything < 0 means some interrupt (canceled, killed etc.)
 		return nil, nil
-	case code == 126:
-	case code == 127:
+	case code == commandNotFoundCode:
 		// no binary/executable
 		return nil, lintCmdError
 	}
